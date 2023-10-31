@@ -2,7 +2,9 @@
 
 ## Hassio Access Point
 
-Forked to remove DSSS_CCK-40 from hostapd.conf. 
+Forked to remove DSSS_CCK-40 from hostapd.conf. This setting may cause driver issues with:
+
+* mt76x2u
 
 Use your hass.io host as a WiFi access point - perfect for off-grid and security focused installations.
 
