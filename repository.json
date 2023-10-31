@@ -1,5 +1,5 @@
 {
-  "name": "Hass.io Access Point",
-  "url": "https://github.com/mattlongman/hassio-addons-directory",
-  "maintainer": "Matt Longman <git@mattlongman.com>"
+  "name": "Home Assistant Add-ons",
+  "url": "https://github.com/cabinlab/hassio-addons",
+  "maintainer": "Cabinlab <git@cabinlab.io>"
 }
