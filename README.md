@@ -2,7 +2,7 @@
 
 ## Hassio Access Point
 
-Forked to remove 
+Forked to remove DSSS_CCK-40 from hostapd.conf. 
 
 Use your hass.io host as a WiFi access point - perfect for off-grid and security focused installations.
 
