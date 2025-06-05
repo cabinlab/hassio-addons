@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Get Home Assistant API token with validation
+TOKEN="${SUPERVISOR_TOKEN:-$HASSIO_TOKEN}"
+
+if [[ -z "$TOKEN" ]]; then
+    echo "ERROR: No Home Assistant API token found"
+    echo "Unable to shutdown host through Home Assistant API"
+    exit 1
+fi
+
+echo "APC UPS: Initiating host shutdown through Home Assistant..."
+
+# Call Home Assistant Supervisor API to shutdown host
+response=$(curl -s -w "%{http_code}" -X POST \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    "http://supervisor/host/shutdown" 2>/dev/null)
+
+http_code="${response: -3}"
+response_body="${response%???}"
+
+if [[ "$http_code" == "200" ]]; then
+    echo "Host shutdown initiated successfully"
+else
+    echo "ERROR: Failed to shutdown host (HTTP $http_code)"
+    echo "Response: $response_body"
+    exit 1
+fi

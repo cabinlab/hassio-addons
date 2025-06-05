@@ -6,6 +6,24 @@
 - Error: "wlan0: Could not connect to kernel driver" - https://raspberrypi.stackexchange.com/a/88297
 - **If anyone has any knowledge relating to the underlying modules, or just wants to assist with testing this addon, please get in touch, submit PRs, etc.**
 
+## [0.4.9] - 2024-01-XX
+
+**Security Improvements**
+- **SECURITY**: Added comprehensive input validation for all configuration values
+- **SECURITY**: Implemented SSID validation (1-32 chars, no control characters)
+- **SECURITY**: Added WPA passphrase validation (8-63 characters)
+- **SECURITY**: Added IP address format validation for all network settings
+- **SECURITY**: Added MAC address format validation for allow/deny lists
+- **SECURITY**: Added WiFi channel validation (1-14 for 2.4GHz)
+- **SECURITY**: Added interface name validation (alphanumeric, max 15 chars)
+- **SECURITY**: Sanitized all config file injections to prevent command injection
+- **SECURITY**: Limited config override arrays to 20 items max with validation
+- **SECURITY**: Added DNS server validation and limited to 8 servers max
+- **SECURITY**: Improved error handling and bounds checking throughout
+- **SECURITY**: Added debug level validation (0-3 range)
+
+## FORK
+
 ## [0.4.8] - 2023-10-19
 
 ### Fixed

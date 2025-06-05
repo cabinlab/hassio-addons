@@ -58,3 +58,7 @@ Note: use either allow or deny lists for MAC filtering. If using allow, deny wil
 New releases will always be tested on the latest Home Assistant OS using Raspberry Pi 3B+ and Pi 4, but existing versions won't be proactively tested when new Home Assistant OS/Supervisor versions are released. If a new HAOS/Supervisor version breaks something, please raise an issue.
 
 This add-on should work with 32 & 64 bit HAOS, and has also been tested on Debian 10 with Home Assistant Supervised.
+
+## Credits
+
+This add-on was originally forked from https://github.com/mattlongman/Hassio-Access-Point

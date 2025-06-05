@@ -61,4 +61,4 @@ For detailed usage instructions, see the [documentation](DOCS.md).
 
 ## Credits
 
-This add-on was created with the assistance of Claude Code itself! The development process, debugging, and documentation were all completed using Claude's AI capabilities - a perfect demonstration of what this add-on can help you accomplish.
+This add-on was originally forked from https://github.com/heytcass/home-assistant-addons

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.2
+
+**Security Improvements**
+- **SECURITY**: Removed unnecessary file system access to other add-ons directory
+- **SECURITY**: Limited credential search to specific safe locations only (/root, /root/.config)
+- **SECURITY**: Bound web terminal to localhost instead of all network interfaces
+- **SECURITY**: Added comprehensive input validation to credential management scripts
+- **SECURITY**: Restricted credential file operations to known file types only
+- **SECURITY**: Added file size limits for credential files (max 10KB)
+- **SECURITY**: Improved error handling and path validation throughout
+
+## 1.0.1
+
+- Minor bug fixes and stability improvements
+
 ## 1.0.0
 
 - First stable release of Claude Terminal add-on:

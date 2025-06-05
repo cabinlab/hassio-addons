@@ -9,7 +9,7 @@ To add this repository to your Home Assistant instance:
 1. Go to **Settings** → **Add-ons** → **Add-on Store**
 2. Click the three dots menu in the top right corner
 3. Select **Repositories**
-4. Add the URL: `https://github.com/heytcass/home-assistant-addons`
+4. Add the URL: `https://github.com/cabinlab/hassio-addons`
 5. Click **Add**
 
 ## Add-ons
@@ -44,13 +44,24 @@ Features:
 
 [Documentation](hassio-access-point/README.md)
 
+### APC UPS Daemon
+
+Monitor and manage APC UPS devices with native apcupsd integration. This modernized add-on provides comprehensive UPS monitoring with advanced event handling and host control capabilities.
+
+Features:
+- Native apcupsd integration optimized for APC devices
+- 22 UPS event types with custom script support
+- Safe host shutdown/reboot through Home Assistant API
+- Email notifications via msmtp
+- USB and network UPS support
+- Comprehensive input validation and security
+- Modern Home Assistant integration
+
+[Documentation](apcupsd/README.md)
+
 ## Support
 
-If you have any questions or issues with these add-ons, please create an issue in this repository.
-
-## Credits
-
-This add-on was created with the assistance of Claude Code itself! The development process, debugging, and documentation were all completed using Claude's AI capabilities.
+These addons are currently experimental and unsupported. You can join the discussions with questions or suggestions.
 
 ## License
 

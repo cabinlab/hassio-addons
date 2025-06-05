@@ -1,0 +1,60 @@
+name: "APC UPS Daemon"
+description: "Monitor APC UPS devices with native apcupsd integration"
+version: "2.0.0"
+slug: "apcupsd"
+init: false
+
+# Supported architectures
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+
+# External resources
+url: "https://github.com/cabinlab/hassio-addons"
+
+# Service startup configuration
+startup: services
+boot: auto
+
+# Home Assistant API access
+hassio_api: true
+hassio_role: manager
+
+# Volume mapping for scripts and configuration
+map:
+  - share:rw
+
+# USB device access for UPS communication
+devices:
+  - "/dev/usb/:/dev/usb/:rwm"
+
+# Network port for apcupsd daemon
+ports:
+  3551/tcp: 3551
+ports_description:
+  3551/tcp: "APC UPS daemon communication port"
+
+# Add-on configuration options
+options:
+  name: "APC UPS"
+  cable: "usb"
+  type: "usb"
+  device: ""
+  extra: []
+
+# Configuration schema
+schema:
+  name: str
+  cable: str
+  type: str
+  device: str
+  extra:
+    - key: str
+      val: str
+
+# Panel configuration
+panel_icon: mdi:battery-plus
+panel_title: "APC UPS Monitor"

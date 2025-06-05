@@ -18,6 +18,66 @@ logger(){
     fi
 }
 
+# Input validation functions
+validate_ssid() {
+    local ssid="$1"
+    # SSID must be 1-32 characters, no control characters
+    if [[ -z "$ssid" || ${#ssid} -gt 32 || "$ssid" =~ [[:cntrl:]] ]]; then
+        return 1
+    fi
+    return 0
+}
+
+validate_passphrase() {
+    local pass="$1"
+    # WPA passphrase must be 8-63 characters
+    if [[ -z "$pass" || ${#pass} -lt 8 || ${#pass} -gt 63 ]]; then
+        return 1
+    fi
+    return 0
+}
+
+validate_ip() {
+    local ip="$1"
+    # Basic IP validation
+    if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        return 1
+    fi
+    # Check each octet is 0-255
+    IFS='.' read -ra octets <<< "$ip"
+    for octet in "${octets[@]}"; do
+        if [[ $octet -gt 255 ]]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+validate_mac() {
+    local mac="$1"
+    # MAC address format validation
+    if [[ ! "$mac" =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$ ]]; then
+        return 1
+    fi
+    return 0
+}
+
+validate_channel() {
+    local channel="$1"
+    # WiFi channels 1-14 for 2.4GHz
+    if [[ ! "$channel" =~ ^[0-9]+$ ]] || [[ $channel -lt 1 || $channel -gt 14 ]]; then
+        return 1
+    fi
+    return 0
+}
+
+# Sanitize string for safe config file injection
+sanitize_config_value() {
+    local value="$1"
+    # Remove potentially dangerous characters
+    echo "$value" | sed 's/[;&|`$(){}]/\\_/g' | tr -d '\n\r'
+}
+
 CONFIG_PATH=/data/options.json
 
 SSID=$(jq --raw-output ".ssid" $CONFIG_PATH)
@@ -40,17 +100,32 @@ CLIENT_INTERNET_ACCESS=$(jq --raw-output ".client_internet_access" $CONFIG_PATH)
 CLIENT_DNS_OVERRIDE=$(jq --raw-output '.client_dns_override | join(" ")' $CONFIG_PATH)
 DNSMASQ_CONFIG_OVERRIDE=$(jq --raw-output '.dnsmasq_config_override | join(" ")' $CONFIG_PATH)
 
-# Get the Default Route interface
-DEFAULT_ROUTE_INTERFACE=$(ip route show default | awk '/^default/ { print $5 }')
+# Get the Default Route interface with validation
+DEFAULT_ROUTE_INTERFACE=$(ip route show default | awk '/^default/ { print $5 }' | head -1)
+if [[ -z "$DEFAULT_ROUTE_INTERFACE" ]]; then
+    logger "Warning: No default route found" 0
+fi
 
-# Set interface as wlan0 if not specified in config
+# Set interface as wlan0 if not specified in config, validate interface name
 if [ ${#INTERFACE} -eq 0 ]; then
     INTERFACE="wlan0"
 fi
 
-# Set debug as 0 if not specified in config
+# Validate interface name format
+if [[ ! "$INTERFACE" =~ ^[a-zA-Z0-9]+$ ]] || [[ ${#INTERFACE} -gt 15 ]]; then
+    echo >&2 "Error: Invalid interface name format: $INTERFACE"
+    exit 1
+fi
+
+# Set debug as 0 if not specified in config, validate range
 if [ ${#DEBUG} -eq 0 ]; then
     DEBUG=0
+fi
+
+# Validate debug level is numeric and in valid range
+if [[ ! "$DEBUG" =~ ^[0-9]+$ ]] || [[ $DEBUG -gt 3 ]]; then
+    echo >&2 "Error: Debug level must be 0-3"
+    exit 1
 fi
 
 echo "Starting Hass.io Access Point Addon"
@@ -80,35 +155,93 @@ ip link set $INTERFACE up
 # Setup signal handlers
 trap 'term_handler' SIGTERM
 
-# Enforces required env variables
-required_vars=(SSID WPA_PASSPHRASE CHANNEL ADDRESS NETMASK BROADCAST)
-for required_var in "${required_vars[@]}"; do
-    if [[ -z ${!required_var} ]]; then
+# Validate all required configuration values
+error=0
+
+# Validate SSID
+if ! validate_ssid "$SSID"; then
+    error=1
+    echo >&2 "Error: SSID must be 1-32 characters with no control characters."
+fi
+
+# Validate passphrase
+if ! validate_passphrase "$WPA_PASSPHRASE"; then
+    error=1
+    echo >&2 "Error: WPA passphrase must be 8-63 characters."
+fi
+
+# Validate channel
+if ! validate_channel "$CHANNEL"; then
+    error=1
+    echo >&2 "Error: Channel must be a number between 1-14."
+fi
+
+# Validate IP addresses
+for ip_var in ADDRESS DHCP_START_ADDR DHCP_END_ADDR; do
+    ip_value="${!ip_var}"
+    if [[ -n "$ip_value" ]] && ! validate_ip "$ip_value"; then
         error=1
-        echo >&2 "Error: $required_var env variable not set."
+        echo >&2 "Error: $ip_var contains invalid IP address format."
     fi
 done
 
-# Sanitise config value for hide_ssid
-if [ $HIDE_SSID -ne 1 ]; then
+# Validate netmask and broadcast
+if ! validate_ip "$NETMASK"; then
+    error=1
+    echo >&2 "Error: NETMASK contains invalid IP address format."
+fi
+
+if ! validate_ip "$BROADCAST"; then
+    error=1
+    echo >&2 "Error: BROADCAST contains invalid IP address format."
+fi
+
+# Validate MAC addresses in allow/deny lists
+if [[ -n "$ALLOW_MAC_ADDRESSES" ]]; then
+    ALLOWED=($ALLOW_MAC_ADDRESSES)
+    for mac in "${ALLOWED[@]}"; do
+        if ! validate_mac "$mac"; then
+            error=1
+            echo >&2 "Error: Invalid MAC address in allow list: $mac"
+        fi
+    done
+fi
+
+if [[ -n "$DENY_MAC_ADDRESSES" ]]; then
+    DENIED=($DENY_MAC_ADDRESSES)
+    for mac in "${DENIED[@]}"; do
+        if ! validate_mac "$mac"; then
+            error=1
+            echo >&2 "Error: Invalid MAC address in deny list: $mac"
+        fi
+    done
+fi
+
+# Sanitise and validate config values
+if [[ ! "$HIDE_SSID" =~ ^[01]$ ]]; then
     HIDE_SSID=0
 fi
 
-# Sanitise config value for dhcp
-if [ $DHCP -ne 1 ]; then
-        DHCP=0
+if [[ ! "$DHCP" =~ ^[01]$ ]]; then
+    DHCP=0
 fi
 
-if [[ -n $error ]]; then
+if [[ ! "$CLIENT_INTERNET_ACCESS" =~ ^[01]$ ]]; then
+    CLIENT_INTERNET_ACCESS=0
+fi
+
+# Exit if any validation errors occurred
+if [[ $error -eq 1 ]]; then
+    echo >&2 "Configuration validation failed. Please check your settings."
     exit 1
 fi
 
-# Setup hostapd.conf
+# Setup hostapd.conf with sanitized values
 logger "# Setup hostapd:" 1
 logger "Add to hostapd.conf: ssid=$SSID" 1
-echo "ssid=$SSID"$'\n' >> /hostapd.conf
+echo "ssid=$(sanitize_config_value "$SSID")"$'\n' >> /hostapd.conf
 logger "Add to hostapd.conf: wpa_passphrase=********" 1
-echo "wpa_passphrase=$WPA_PASSPHRASE"$'\n' >> /hostapd.conf
+echo "wpa_passphrase=$(sanitize_config_value "$WPA_PASSPHRASE")"$'\n' >> /hostapd.conf
 logger "Add to hostapd.conf: channel=$CHANNEL" 1
 echo "channel=$CHANNEL"$'\n' >> /hostapd.conf
 logger "Add to hostapd.conf: ignore_broadcast_ssid=$HIDE_SSID" 1
@@ -157,13 +290,26 @@ ifconfig $INTERFACE $ADDRESS netmask $NETMASK broadcast $BROADCAST
 logger "Add to hostapd.conf: interface=$INTERFACE" 1
 echo "interface=$INTERFACE"$'\n' >> /hostapd.conf
 
-# Append override options to hostapd.conf
+# Append override options to hostapd.conf with validation
 if [ ${#HOSTAPD_CONFIG_OVERRIDE} -ge 1 ]; then
     logger "# Custom hostapd config options:" 0
     HOSTAPD_OVERRIDES=($HOSTAPD_CONFIG_OVERRIDE)
+    override_count=0
     for override in "${HOSTAPD_OVERRIDES[@]}"; do
-        echo "$override"$'\n' >> /hostapd.conf
-        logger "Add to hostapd.conf: $override" 0
+        # Limit number of overrides and sanitize content
+        if [[ $override_count -ge 20 ]]; then
+            logger "Warning: Maximum 20 hostapd config overrides allowed" 0
+            break
+        fi
+        # Basic validation - must contain = and be reasonable length
+        if [[ "$override" =~ ^[a-zA-Z0-9_-]+=[a-zA-Z0-9._/-]+$ ]] && [[ ${#override} -le 100 ]]; then
+            sanitized_override=$(sanitize_config_value "$override")
+            echo "$sanitized_override"$'\n' >> /hostapd.conf
+            logger "Add to hostapd.conf: $sanitized_override" 0
+            ((override_count++))
+        else
+            logger "Warning: Skipping invalid hostapd override: $override" 0
+        fi
     done
 fi
 
@@ -180,11 +326,24 @@ if [ $DHCP -eq 1 ]; then
         if [ ${#CLIENT_DNS_OVERRIDE} -ge 1 ]; then
             dns_string="dhcp-option=6"
             DNS_OVERRIDES=($CLIENT_DNS_OVERRIDE)
+            dns_count=0
             for override in "${DNS_OVERRIDES[@]}"; do
-                dns_string+=",$override"
+                # Limit number of DNS servers and validate IP format
+                if [[ $dns_count -ge 8 ]]; then
+                    logger "Warning: Maximum 8 DNS servers allowed" 0
+                    break
+                fi
+                if validate_ip "$override"; then
+                    dns_string+=",$override"
+                    ((dns_count++))
+                else
+                    logger "Warning: Skipping invalid DNS server IP: $override" 0
+                fi
             done
-            echo "$dns_string"$'\n' >> /dnsmasq.conf
-            logger "Add custom DNS: $dns_string" 0
+            if [[ $dns_count -gt 0 ]]; then
+                echo "$dns_string"$'\n' >> /dnsmasq.conf
+                logger "Add custom DNS: $dns_string" 0
+            fi
         else
             IFS=$'\n' read -r -d '' -a dns_array < <( nmcli device show | grep IP4.DNS | awk '{print $2}' && printf '\0' )
 
@@ -203,13 +362,26 @@ if [ $DHCP -eq 1 ]; then
 
         fi
 
-    # Append override options to dnsmasq.conf
+    # Append override options to dnsmasq.conf with validation
     if [ ${#DNSMASQ_CONFIG_OVERRIDE} -ge 1 ]; then
         logger "# Custom dnsmasq config options:" 0
         DNSMASQ_OVERRIDES=($DNSMASQ_CONFIG_OVERRIDE)
+        override_count=0
         for override in "${DNSMASQ_OVERRIDES[@]}"; do
-            echo "$override"$'\n' >> /dnsmasq.conf
-            logger "Add to dnsmasq.conf: $override" 0
+            # Limit number of overrides and sanitize content
+            if [[ $override_count -ge 20 ]]; then
+                logger "Warning: Maximum 20 dnsmasq config overrides allowed" 0
+                break
+            fi
+            # Basic validation for dnsmasq config format
+            if [[ "$override" =~ ^[a-zA-Z0-9_-]+([=:][a-zA-Z0-9._:,/-]+)?$ ]] && [[ ${#override} -le 100 ]]; then
+                sanitized_override=$(sanitize_config_value "$override")
+                echo "$sanitized_override"$'\n' >> /dnsmasq.conf
+                logger "Add to dnsmasq.conf: $sanitized_override" 0
+                ((override_count++))
+            else
+                logger "Warning: Skipping invalid dnsmasq override: $override" 0
+            fi
         done
     fi
     

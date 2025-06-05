@@ -14,8 +14,13 @@ show_help() {
 find_credentials() {
     echo "Searching for credential files..."
     echo ""
-    echo "Looking in common locations:"
-    find / -name "auth.json" -o -name "*claude*" -o -name "*anthropic*" 2>/dev/null | grep -v "node_modules\|npm" | sort
+    echo "Looking in safe locations:"
+    for search_dir in "/root" "/root/.config" "/config/claude-config"; do
+        if [ -d "$search_dir" ]; then
+            echo "Checking $search_dir:"
+            find "$search_dir" -maxdepth 2 -name "auth.json" -o -name "*claude*" -o -name "*anthropic*" 2>/dev/null | sort
+        fi
+    done
 }
 
 debug_info() {
@@ -60,21 +65,30 @@ save_credentials() {
         echo "Claude JSON credential file not found at /root/.claude.json"
     fi
     
-    # Also search for any other potential credential files
-    cred_files=$(find / -name "auth.json" -o -name "*claude*" -o -name "*anthropic*" 2>/dev/null | grep -v "node_modules\|npm\|/config/claude-config" | grep -v "bin/claude\|bin/claude-auth")
-    if [ -z "$cred_files" ]; then
-        echo "No additional credential files found."
-    else
-        echo "Found additional potential credential files:"
-        for file in $cred_files; do
-            # Exclude directories and executables
-            if [ -f "$file" ] && [ ! -x "$file" ]; then
-                dest="/config/claude-config/$(basename "$file")"
-                echo "Copying $file to $dest"
-                cp -v "$file" "$dest"
+    # Search for credential files in safe locations only
+    for search_dir in "/root/.config" "/root"; do
+        if [ -d "$search_dir" ]; then
+            cred_files=$(find "$search_dir" -maxdepth 2 -name "auth.json" -o -name "*claude*" -o -name "*anthropic*" 2>/dev/null | grep -v "bin/claude\|bin/claude-auth")
+            if [ -n "$cred_files" ]; then
+                echo "Found credential files in $search_dir:"
+                for file in $cred_files; do
+                    # Only copy known credential file types
+                    case "$(basename "$file")" in
+                        .claude|.claude.json|credentials.json|auth.json)
+                            if [ -f "$file" ] && [ ! -x "$file" ]; then
+                                dest="/config/claude-config/$(basename "$file")"
+                                echo "Copying $file to $dest"
+                                cp -v "$file" "$dest"
+                            fi
+                            ;;
+                        *)
+                            echo "Skipping unknown file type: $file"
+                            ;;
+                    esac
+                done
             fi
-        done
-    fi
+        fi
+    done
     
     echo "Setting permissions on credential files..."
     chmod -R 755 /config/claude-config/
@@ -85,7 +99,12 @@ save_credentials() {
 logout() {
     echo "Clearing credentials and symlinks..."
     rm -rf /config/claude-config/* /root/.config/anthropic/
-    find / -name "auth.json" -o -name "*claude*" -o -name "*anthropic*" 2>/dev/null | grep -v "node_modules\|npm\|claude-terminal" | xargs rm -f 2>/dev/null
+    # Only remove credential files from safe locations
+    for search_dir in "/root" "/root/.config"; do
+        if [ -d "$search_dir" ]; then
+            find "$search_dir" -maxdepth 2 \( -name ".claude" -o -name ".claude.json" -o -name "auth.json" -o -name "credentials.json" \) -type f -delete 2>/dev/null
+        fi
+    done
     echo "All credentials cleared. Please restart the add-on to re-authenticate."
 }
 

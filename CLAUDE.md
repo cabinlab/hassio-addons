@@ -24,16 +24,27 @@ This is a Home Assistant add-ons repository containing multiple add-ons that fol
 - Uses hostapd for AP management and dnsmasq for DHCP/DNS
 - Extensive configuration options for network settings
 
+**APC UPS Daemon** (`apcupsd/`): UPS monitoring and management
+- Native apcupsd integration for APC UPS devices
+- 22 event types with custom script support
+- Host control via Home Assistant Supervisor API
+- Email notifications and comprehensive logging
+- USB and network UPS support
+
 ## Build Commands
 
-- Build add-on: `docker build -t local/claude-terminal ./claude-terminal`
+- Build claude-terminal: `docker build -t local/claude-terminal ./claude-terminal`
+- Build access-point: `docker build -t local/hassio-access-point ./hassio-access-point`
+- Build apcupsd: `docker build -t local/apcupsd ./apcupsd`
 - Run add-on locally: `docker run -p 7681:7681 -v $(pwd)/config:/config local/claude-terminal`
 - Validate add-on: `docker run --rm -v $(pwd):/data homeassistant/amd64-builder --validate`
-- Lint Dockerfile: `hadolint ./claude-terminal/Dockerfile`
+- Validate specific add-on: `docker run --rm -v $(pwd)/apcupsd:/data homeassistant/amd64-builder --validate`
+- Lint Dockerfile: `hadolint ./apcupsd/Dockerfile`
 
 ## Test Commands
 
-- Basic functionality test: `curl -X GET http://localhost:7681/`
+- Claude Terminal: `curl -X GET http://localhost:7681/`
+- APC UPS status: `curl -X GET http://localhost:3551/` or `apcaccess status localhost:3551`
 - Web terminal test: Open browser to `http://localhost:7681/` to verify web terminal loads
 
 ## Code Style Guidelines
@@ -51,5 +62,14 @@ This is a Home Assistant add-ons repository containing multiple add-ons that fol
 - Add-on slugs use underscores (e.g., `claude_terminal`)
 - Version format: semantic versioning (major.minor.patch)
 - Support multiple architectures: aarch64, amd64, armhf, armv7, i386
-- Use Home Assistant base images via BUILD_FROM arg
+- Use Home Assistant base images via BUILD_FROM arg in `build.yaml`
 - Map only necessary directories and use appropriate permissions (rw/ro)
+- Repository URL: `https://github.com/cabinlab/hassio-addons`
+
+## Add-on Development Workflow
+
+- Configuration files: Use `config.yaml` (new format) or `config.json` (legacy)
+- Entry script: `run.sh` with shebang `#!/usr/bin/with-contenv bashio`
+- Credential management: Claude Terminal stores auth in `/config/claude-config`
+- Script modules: Helper scripts stored in `scripts/` directory within add-on
+- Networking: Access Point requires `host_network: true` and `NET_ADMIN` privilege

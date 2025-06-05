@@ -70,10 +70,10 @@ start_web_terminal() {
     bashio::log.info "ANTHROPIC_CONFIG_DIR=${ANTHROPIC_CONFIG_DIR}"
     bashio::log.info "HOME=${HOME}"
 
-    # Run ttyd with improved configuration
+    # Run ttyd with improved security configuration
     exec ttyd \
         --port "${port}" \
-        --interface 0.0.0.0 \
+        --interface 127.0.0.1 \
         --writable \
         bash -c "clear && echo 'Welcome to Claude Terminal!' && echo '' && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && node \$(which claude) && /usr/local/bin/credentials-manager save"
 }
