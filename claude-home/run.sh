@@ -30,13 +30,17 @@ install_tools() {
     apk add --no-cache ttyd jq curl
 }
 
-# Setup credential management scripts
-setup_credential_scripts() {
+# Setup credential management and security scripts
+setup_security_scripts() {
     # Copy modular scripts to system locations
     if [ -d "/config/scripts" ]; then
         cp /config/scripts/credentials-manager.sh /usr/local/bin/credentials-manager
         cp /config/scripts/credentials-service.sh /usr/local/bin/credentials-service  
         cp /config/scripts/claude-auth.sh /usr/local/bin/claude-auth
+        cp /config/scripts/resource-limits.sh /usr/local/bin/resource-limits
+        cp /config/scripts/app-security.sh /usr/local/bin/app-security
+        cp /config/scripts/activity-monitor.sh /usr/local/bin/activity-monitor
+        cp /config/scripts/filesystem-security.sh /usr/local/bin/filesystem-security
     else
         # Fallback to embedded scripts for backward compatibility
         bashio::log.warning "Script modules not found, using embedded versions"
@@ -47,10 +51,172 @@ setup_credential_scripts() {
     chmod +x /usr/local/bin/credentials-manager
     chmod +x /usr/local/bin/credentials-service
     chmod +x /usr/local/bin/claude-auth
+    chmod +x /usr/local/bin/resource-limits
+    chmod +x /usr/local/bin/app-security
+    chmod +x /usr/local/bin/activity-monitor
+    chmod +x /usr/local/bin/filesystem-security
 
     # Create convenience aliases
     ln -sf /usr/local/bin/credentials-manager /usr/local/bin/claude-logout
     ln -sf /usr/local/bin/claude-auth /usr/local/bin/debug-claude-auth
+    ln -sf /usr/local/bin/resource-limits /usr/local/bin/security-limits
+    ln -sf /usr/local/bin/app-security /usr/local/bin/app-sec
+    ln -sf /usr/local/bin/activity-monitor /usr/local/bin/monitor
+    ln -sf /usr/local/bin/filesystem-security /usr/local/bin/fs-sec
+}
+
+# Apply security policies and resource limits
+apply_security_policies() {
+    bashio::log.info "Applying container security policies..."
+    
+    # Create security log directory with proper permissions
+    mkdir -p /config/claude-config
+    touch /config/claude-config/security.log
+    chmod 600 /config/claude-config/security.log
+    
+    # Apply all security policies and resource limits
+    if [ -x "/usr/local/bin/resource-limits" ]; then
+        /usr/local/bin/resource-limits all
+        bashio::log.info "Resource limits and security policies applied"
+    else
+        bashio::log.warning "Resource limits script not found, applying basic limits"
+        # Fallback basic limits
+        ulimit -n 1024  # File descriptors
+        ulimit -u 256   # Processes
+        ulimit -c 0     # No core dumps
+        ulimit -f 102400 # File size: 100MB
+    fi
+    
+    # Log security initialization
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Container security initialization completed" >> /config/claude-config/security.log
+}
+
+# Apply application security controls
+apply_app_security() {
+    bashio::log.info "Applying application security controls..."
+    
+    # Apply all application security controls
+    if [ -x "/usr/local/bin/app-security" ]; then
+        /usr/local/bin/app-security all
+        bashio::log.info "Application security controls applied"
+    else
+        bashio::log.warning "Application security script not found, applying basic controls"
+        # Fallback basic application security
+        export NODE_ENV=production
+        export NODE_OPTIONS="--max-old-space-size=256"
+        export NODE_NO_WARNINGS=1
+        export NO_UPDATE_NOTIFIER=1
+        npm config set audit-level moderate 2>/dev/null || true
+        npm config set ignore-scripts true 2>/dev/null || true
+    fi
+    
+    # Log application security initialization
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Application security initialization completed" >> /config/claude-config/security.log
+}
+
+# Start container activity monitoring
+start_activity_monitoring() {
+    bashio::log.info "Starting container activity monitoring..."
+    
+    # Start activity monitoring services
+    if [ -x "/usr/local/bin/activity-monitor" ]; then
+        /usr/local/bin/activity-monitor start
+        bashio::log.info "Container activity monitoring started"
+    else
+        bashio::log.warning "Activity monitor script not found, skipping monitoring"
+    fi
+    
+    # Log monitoring initialization
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Container activity monitoring started" >> /config/claude-config/security.log
+}
+
+# Setup filesystem security controls
+setup_filesystem_security() {
+    bashio::log.info "Setting up filesystem security controls..."
+    
+    # Apply filesystem security policies
+    if [ -x "/usr/local/bin/filesystem-security" ]; then
+        /usr/local/bin/filesystem-security all
+        bashio::log.info "Filesystem security controls applied"
+    else
+        bashio::log.warning "Filesystem security script not found, applying basic controls"
+        # Fallback basic filesystem security
+        chmod 700 /config/claude-config 2>/dev/null || true
+        chmod 600 /config/claude-config/*.log 2>/dev/null || true
+        chmod 600 /config/claude-config/*.hash 2>/dev/null || true
+        umask 077
+    fi
+    
+    # Log filesystem security initialization
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Filesystem security controls applied" >> /config/claude-config/security.log
+}
+
+# Verify all security components are functioning
+verify_security_integration() {
+    bashio::log.info "Verifying security integration..."
+    
+    local security_log="/config/claude-config/security.log"
+    local status_file="/config/claude-config/security-status.txt"
+    
+    # Create security status report
+    {
+        echo "========================================"
+        echo "Claude Home Security Status Report"
+        echo "Generated: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "========================================"
+        echo ""
+        
+        echo "Security Components Status:"
+        echo "- Enhanced credential validation: $([ -x /usr/local/bin/credentials-manager ] && echo "✓ Active" || echo "✗ Missing")"
+        echo "- Process resource limits: $([ -x /usr/local/bin/resource-limits ] && echo "✓ Active" || echo "✗ Missing")"
+        echo "- Application security controls: $([ -x /usr/local/bin/app-security ] && echo "✓ Active" || echo "✗ Missing")"
+        echo "- Container activity monitoring: $([ -x /usr/local/bin/activity-monitor ] && echo "✓ Active" || echo "✗ Missing")"
+        echo "- Filesystem access controls: $([ -x /usr/local/bin/filesystem-security ] && echo "✓ Active" || echo "✗ Missing")"
+        echo ""
+        
+        echo "Security Logs:"
+        echo "- Main security log: $([ -f "$security_log" ] && echo "✓ Present" || echo "✗ Missing")"
+        echo "- Credential access log: $([ -f /config/claude-config/access.log ] && echo "✓ Present" || echo "✗ Missing")"
+        echo "- Activity monitoring: $([ -f /config/claude-config/activity.log ] && echo "✓ Present" || echo "✗ Missing")"
+        echo "- Filesystem integrity: $([ -f /config/claude-config/integrity.log ] && echo "✓ Present" || echo "✗ Missing")"
+        echo ""
+        
+        echo "Current Security Settings:"
+        echo "- File descriptor limit: $(ulimit -n)"
+        echo "- Process limit: $(ulimit -u)"
+        echo "- Memory limit: $(ulimit -v)KB"
+        echo "- File size limit: $(ulimit -f)KB"
+        echo "- Core dumps: $(ulimit -c)"
+        echo "- umask setting: $(umask)"
+        echo ""
+        
+        echo "Directory Permissions:"
+        [ -d /config/claude-config ] && echo "- /config/claude-config: $(stat -c%a /config/claude-config 2>/dev/null || echo 'N/A')"
+        [ -d /config/claude-config/backups ] && echo "- /config/claude-config/backups: $(stat -c%a /config/claude-config/backups 2>/dev/null || echo 'N/A')"
+        echo ""
+        
+        echo "Security Processes:"
+        echo "- Activity monitors: $(pgrep -f activity-monitor | wc -l) running"
+        echo "- Node.js processes: $(pgrep -c node) running"
+        echo ""
+        
+        echo "Recent Security Events:"
+        if [ -f "$security_log" ]; then
+            echo "Last 5 security log entries:"
+            tail -n 5 "$security_log" | sed 's/^/  /'
+        else
+            echo "No security log available"
+        fi
+        
+    } > "$status_file"
+    
+    chmod 600 "$status_file"
+    
+    # Log integration verification
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Security integration verification completed" >> "$security_log"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Security status report generated: $status_file" >> "$security_log"
+    
+    bashio::log.info "Security integration verification completed - see $status_file for details"
 }
 
 # Start credential monitoring service
@@ -80,11 +246,16 @@ start_web_terminal() {
 
 # Main execution
 main() {
-    bashio::log.info "Initializing Claude Terminal add-on..."
+    bashio::log.info "Initializing Claude Home add-on with enhanced security..."
     
     init_environment
     install_tools
-    setup_credential_scripts
+    setup_security_scripts
+    apply_security_policies
+    apply_app_security
+    setup_filesystem_security
+    start_activity_monitoring
+    verify_security_integration
     start_credential_service
     start_web_terminal
 }

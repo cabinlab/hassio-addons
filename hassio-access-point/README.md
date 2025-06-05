@@ -1,3 +1,19 @@
+# Access Point Add-on for Home Assistant
+
+Turn your Home Assistant device into a Wi-Fi access point, allowing other devices to connect and providing internet access through your device's connection.
+
+## Installation
+
+### Quick Install
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=hassio-access-point&repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
+
+### Manual Installation
+1. Add this repository to your Home Assistant add-on store:
+   [![Open your Home Assistant instance and show the add add-on repository dialog with this repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
+2. Install the Access Point add-on
+3. Configure the add-on (see configuration section below)
+4. Start the add-on
+
 ## Main features
 - Create a WiFi access point with built-in (Raspberry Pi) or external WiFi (USB) cards (using hostapd)
 - Hidden or visible SSIDs

@@ -4,8 +4,9 @@ This repository contains custom Home Assistant add-ons that extend your system's
 
 ## Installation
 
-To add this repository to your Home Assistant instance:
+[![Open your Home Assistant instance and show the add add-on repository dialog with this repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
 
+**Manual Installation:**
 1. Go to **Settings** → **Add-ons** → **Add-on Store**
 2. Click the three dots menu in the top right corner
 3. Select **Repositories**
@@ -15,6 +16,8 @@ To add this repository to your Home Assistant instance:
 ## Add-ons
 
 ### Claude Home
+
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=claude_home&repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
 
 An AI-powered web-based terminal interface with Claude Code CLI pre-installed. This add-on provides a terminal environment directly in your Home Assistant dashboard, allowing you to use Claude's powerful AI capabilities for coding, automation, and configuration tasks.
 
@@ -33,6 +36,8 @@ Features:
 
 ### Access Point
 
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=hassio-access-point&repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
+
 Turn your Home Assistant device into a Wi-Fi access point, allowing other devices to connect and providing internet access through your device's connection.
 
 Features:
@@ -45,6 +50,8 @@ Features:
 [Documentation](hassio-access-point/README.md)
 
 ### APC UPS Daemon
+
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=apcupsd&repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
 
 Monitor and manage APC UPS devices with native apcupsd integration. This modernized add-on provides comprehensive UPS monitoring with advanced event handling and host control capabilities.
 

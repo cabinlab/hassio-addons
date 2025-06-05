@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.0
+
+**Major Security Enhancement Update**
+- **SECURITY**: Implemented comprehensive container security framework
+- **SECURITY**: Enhanced credential validation with advanced pattern checking and integrity verification
+- **SECURITY**: Added automatic credential backup and hash-based integrity checking
+- **SECURITY**: Implemented process resource limits (ulimit controls) for file descriptors, memory, CPU time, and processes
+- **SECURITY**: Added application security controls for Node.js/npm with secure configurations
+- **SECURITY**: Implemented comprehensive container activity monitoring with anomaly detection
+- **SECURITY**: Added filesystem access controls with permission auditing and access restrictions
+- **SECURITY**: Created modular security script architecture for maintainability
+- **SECURITY**: Added comprehensive audit logging for all security events
+- **SECURITY**: Implemented security status verification and reporting
+- **SECURITY**: Added automatic cleanup and log rotation for security logs
+- **SECURITY**: Created secure credential access patterns with monitoring
+- **MONITORING**: Real-time monitoring of processes, network connections, filesystem changes, and resource usage
+- **MONITORING**: Anomaly detection for suspicious activities and resource violations
+- **MONITORING**: Separate log files for different security aspects (access, activity, integrity, etc.)
+- Enhanced startup sequence with comprehensive security initialization
+- Added convenience aliases for all security tools
+- Improved error handling and fallback mechanisms throughout
+
 ## 1.1.0
 
 **Rebranding and Name Change**
