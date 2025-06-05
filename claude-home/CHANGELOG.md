@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0
+
+**Rebranding and Name Change**
+- Renamed from "Claude Terminal" to "Claude Home"
+- Updated all references and branding to reflect new name
+- No functional changes from previous version
+
 ## 1.0.2
 
 **Security Improvements**

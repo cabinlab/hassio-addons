@@ -14,9 +14,9 @@ To add this repository to your Home Assistant instance:
 
 ## Add-ons
 
-### Claude Terminal
+### Claude Home
 
-A web-based terminal interface with Claude Code CLI pre-installed. This add-on provides a terminal environment directly in your Home Assistant dashboard, allowing you to use Claude's powerful AI capabilities for coding, automation, and configuration tasks.
+An AI-powered web-based terminal interface with Claude Code CLI pre-installed. This add-on provides a terminal environment directly in your Home Assistant dashboard, allowing you to use Claude's powerful AI capabilities for coding, automation, and configuration tasks.
 
 Features:
 - Web terminal access through your Home Assistant UI
@@ -29,7 +29,7 @@ Features:
   - Home Assistant automation help
   - Learning resources
 
-[Documentation](claude-terminal/DOCS.md)
+[Documentation](claude-home/DOCS.md)
 
 ### Access Point
 
