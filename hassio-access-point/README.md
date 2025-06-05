@@ -61,4 +61,4 @@ This add-on should work with 32 & 64 bit HAOS, and has also been tested on Debia
 
 ## Credits
 
-This add-on was originally forked from https://github.com/mattlongman/Hassio-Access-Point
+Originally forked from: https://github.com/mattlongman/Hassio-Access-Point

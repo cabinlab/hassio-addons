@@ -61,4 +61,4 @@ For detailed usage instructions, see the [documentation](DOCS.md).
 
 ## Credits
 
-This add-on was originally forked from https://github.com/heytcass/home-assistant-addons
+Originally forked from: https://github.com/heytcass/home-assistant-addons

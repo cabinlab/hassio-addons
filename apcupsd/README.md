@@ -195,3 +195,7 @@ This add-on is compatible with the original configuration format. Simply:
 - [Documentation](https://github.com/cabinlab/hassio-addons)
 - [Issue Tracker](https://github.com/cabinlab/hassio-addons/issues)
 - [Home Assistant apcupsd Integration](https://www.home-assistant.io/integrations/apcupsd/)
+
+## Credits
+
+Originally forked from: https://github.com/korylprince/hassio-apcupsd
