@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2
+
+**Web UI Access Fix**
+- **FIX**: Resolved web UI accessibility issue by binding to 0.0.0.0 instead of localhost
+- **FIX**: Fixed BusyBox pgrep compatibility issue causing command errors
+- Web terminal now properly accessible from Home Assistant ingress
+- Improved network configuration for container environment
+
 ## 1.2.1
 
 **Startup Reliability Fix**

@@ -251,7 +251,7 @@ verify_security_integration() {
         
         echo "Security Processes:"
         echo "- Activity monitors: $(pgrep -f activity-monitor | wc -l) running"
-        echo "- Node.js processes: $(pgrep -c node) running"
+        echo "- Node.js processes: $(pgrep node | wc -l) running"
         echo ""
         
         echo "Recent Security Events:"
@@ -293,7 +293,7 @@ start_web_terminal() {
     # Run ttyd with improved security configuration
     exec ttyd \
         --port "${port}" \
-        --interface 127.0.0.1 \
+        --interface 0.0.0.0 \
         --writable \
         bash -c "clear && echo 'Welcome to Claude Terminal!' && echo '' && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && node \$(which claude) && /usr/local/bin/credentials-manager save"
 }
