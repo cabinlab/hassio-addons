@@ -1,4 +1,4 @@
-# Home Assistant Add-ons
+# Cabin Assistant add-ons
 
 This repository contains custom Home Assistant add-ons that extend your system's functionality.
 

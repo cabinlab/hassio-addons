@@ -6,7 +6,7 @@ build_from:
   i386: ghcr.io/home-assistant/i386-base:3.19
 
 labels:
-  org.opencontainers.image.title: "Home Assistant Add-on: APC UPS Daemon"
+  org.opencontainers.image.title: "Cabin Assistant add-on: APC UPS Daemon"
   org.opencontainers.image.description: "Monitor APC UPS devices with native apcupsd integration"
   org.opencontainers.image.source: "https://github.com/cabinlab/hassio-addons"
   org.opencontainers.image.licenses: "MIT"
