@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV LANG=C.UTF-8
 
 # Install packages in a single layer to minimize image size
-RUN apk add --no-cache \
+RUN apk update && apk add --no-cache \
     apcupsd \
     jq \
     curl \

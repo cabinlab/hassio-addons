@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2024-12-16
+
+### Fixed
+- Add apk update before package installation to resolve installation failures
+- Ensure package repository index is current before installing apcupsd
+
 ## [2.0.0] - 2024-06-05
 
 ### Modernized and Integrated
