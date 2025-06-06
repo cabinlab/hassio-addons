@@ -32,37 +32,91 @@ install_tools() {
 
 # Setup credential management and security scripts
 setup_security_scripts() {
-    # Copy modular scripts to system locations
+    bashio::log.info "Setting up security scripts..."
+    
+    # Copy modular scripts to system locations if they exist
     if [ -d "/config/scripts" ]; then
-        cp /config/scripts/credentials-manager.sh /usr/local/bin/credentials-manager
-        cp /config/scripts/credentials-service.sh /usr/local/bin/credentials-service  
-        cp /config/scripts/claude-auth.sh /usr/local/bin/claude-auth
-        cp /config/scripts/resource-limits.sh /usr/local/bin/resource-limits
-        cp /config/scripts/app-security.sh /usr/local/bin/app-security
-        cp /config/scripts/activity-monitor.sh /usr/local/bin/activity-monitor
-        cp /config/scripts/filesystem-security.sh /usr/local/bin/filesystem-security
+        bashio::log.info "Found script modules, copying to system locations..."
+        
+        # Copy each script individually with error checking
+        for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security; do
+            if [ -f "/config/scripts/${script}.sh" ]; then
+                cp "/config/scripts/${script}.sh" "/usr/local/bin/${script}" && \
+                chmod +x "/usr/local/bin/${script}" && \
+                bashio::log.info "Installed ${script} script"
+            else
+                bashio::log.warning "Script ${script}.sh not found, creating minimal fallback"
+                create_fallback_script "${script}"
+            fi
+        done
     else
         # Fallback to embedded scripts for backward compatibility
-        bashio::log.warning "Script modules not found, using embedded versions"
-        # Keep existing embedded script creation here as fallback
+        bashio::log.warning "Script modules directory not found, creating fallback scripts"
+        create_all_fallback_scripts
     fi
-    
-    # Make scripts executable
-    chmod +x /usr/local/bin/credentials-manager
-    chmod +x /usr/local/bin/credentials-service
-    chmod +x /usr/local/bin/claude-auth
-    chmod +x /usr/local/bin/resource-limits
-    chmod +x /usr/local/bin/app-security
-    chmod +x /usr/local/bin/activity-monitor
-    chmod +x /usr/local/bin/filesystem-security
 
-    # Create convenience aliases
-    ln -sf /usr/local/bin/credentials-manager /usr/local/bin/claude-logout
-    ln -sf /usr/local/bin/claude-auth /usr/local/bin/debug-claude-auth
-    ln -sf /usr/local/bin/resource-limits /usr/local/bin/security-limits
-    ln -sf /usr/local/bin/app-security /usr/local/bin/app-sec
-    ln -sf /usr/local/bin/activity-monitor /usr/local/bin/monitor
-    ln -sf /usr/local/bin/filesystem-security /usr/local/bin/fs-sec
+    # Create convenience aliases (only if target files exist)
+    [ -f /usr/local/bin/credentials-manager ] && ln -sf /usr/local/bin/credentials-manager /usr/local/bin/claude-logout
+    [ -f /usr/local/bin/claude-auth ] && ln -sf /usr/local/bin/claude-auth /usr/local/bin/debug-claude-auth
+    [ -f /usr/local/bin/resource-limits ] && ln -sf /usr/local/bin/resource-limits /usr/local/bin/security-limits
+    [ -f /usr/local/bin/app-security ] && ln -sf /usr/local/bin/app-security /usr/local/bin/app-sec
+    [ -f /usr/local/bin/activity-monitor ] && ln -sf /usr/local/bin/activity-monitor /usr/local/bin/monitor
+    [ -f /usr/local/bin/filesystem-security ] && ln -sf /usr/local/bin/filesystem-security /usr/local/bin/fs-sec
+}
+
+# Create minimal fallback scripts
+create_fallback_script() {
+    local script_name="$1"
+    local script_path="/usr/local/bin/${script_name}"
+    
+    case "$script_name" in
+        credentials-manager)
+            cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Minimal fallback credentials manager
+mkdir -p /config/claude-config
+chmod 700 /config/claude-config
+case "$1" in
+    logout)
+        echo "Clearing credentials..."
+        rm -rf /config/claude-config/.claude* /root/.claude*
+        rm -rf /root/.config/anthropic /config/claude-config/credentials.json
+        echo "Credentials cleared. Please restart to re-authenticate."
+        ;;
+    *)
+        echo "Basic credential management active"
+        ;;
+esac
+EOF
+            ;;
+        resource-limits)
+            cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Minimal fallback resource limits
+ulimit -n 1024  # File descriptors
+ulimit -u 256   # Processes  
+ulimit -c 0     # No core dumps
+ulimit -f 102400 # File size: 100MB
+echo "Basic resource limits applied"
+EOF
+            ;;
+        *)
+            cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Minimal fallback script
+echo "Fallback script active"
+EOF
+            ;;
+    esac
+    
+    chmod +x "$script_path"
+}
+
+# Create all fallback scripts
+create_all_fallback_scripts() {
+    for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security; do
+        create_fallback_script "$script"
+    done
 }
 
 # Apply security policies and resource limits

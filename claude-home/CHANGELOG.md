@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1
+
+**Startup Reliability Fix**
+- **FIX**: Resolved script module loading failure during container startup
+- **FIX**: Added robust fallback script creation when security modules are missing
+- **FIX**: Improved error handling for script copying and permission setting
+- **FIX**: Added individual script validation and graceful degradation
+- Enhanced logging for better troubleshooting of startup issues
+- Ensured backward compatibility with minimal fallback implementations
+
 ## 1.2.0
 
 **Major Security Enhancement Update**
