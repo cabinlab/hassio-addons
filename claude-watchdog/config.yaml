@@ -1,0 +1,54 @@
+name: "Claude Watchdog"
+description: "Intelligent Home Assistant monitoring with continuous Claude analysis"
+version: "0.1.0"
+slug: "claude_watchdog"
+init: false
+
+# Supported architectures
+arch:
+  - aarch64
+  - amd64
+
+# External resources
+url: "https://github.com/cabinlab/hassio-addons"
+
+# No web interface - runs as background service
+ingress: false
+panel_icon: mdi:shield-search
+panel_title: "Claude Watchdog"
+panel_admin: true
+
+# Add-on configuration options
+options:
+  claude_model: "claude-3-5-haiku-20241022"
+  check_interval: 30
+  insight_threshold: 0.8
+  max_daily_api_calls: 1000
+  monitoring_scope:
+    - "climate"
+    - "security"
+    - "energy"
+  notification_service: "persistent_notification"
+  enable_learning: true
+  cost_limit_daily: 1.00
+
+schema:
+  claude_model: "list(claude-3-5-haiku-20241022|claude-3-5-sonnet-20241022|claude-3-haiku-20240307)?"
+  check_interval: "int(10,300)?"
+  insight_threshold: "float(0.5,1.0)?"
+  max_daily_api_calls: "int(100,5000)?"
+  monitoring_scope: "[list(climate|security|energy|automation_performance|device_health|patterns)]?"
+  notification_service: "str?"
+  enable_learning: "bool?"
+  cost_limit_daily: "float(0.10,10.00)?"
+
+# Volume mapping for persistent storage
+map:
+  - config:rw    # Claude configuration and monitoring data
+
+# Service startup configuration
+startup: services
+
+# Require Home Assistant API access
+homeassistant_api: true
+hassio_api: true

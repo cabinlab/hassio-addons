@@ -22,12 +22,74 @@ init_environment() {
     export CLAUDE_CREDENTIALS_DIRECTORY="/config/claude-config"
     export ANTHROPIC_CONFIG_DIR="/config/claude-config"
     export HOME="/root"
+    
+    # Read configuration from Home Assistant and create Claude settings
+    create_claude_settings
+    
+    # Set basic environment variables (telemetry only)
+    local disable_telemetry=$(bashio::config 'disable_telemetry' 'false')
+    if [ "$disable_telemetry" = "true" ]; then
+        export DISABLE_TELEMETRY=1
+        export DISABLE_ERROR_REPORTING=1
+    fi
+    
+    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-sonnet-20241022')
+    local theme=$(bashio::config 'theme' 'dark')
+    bashio::log.info "Configuration: Model=$claude_model, Theme=$theme, Telemetry=$([ "$disable_telemetry" = "true" ] && echo "disabled" || echo "enabled")"
+}
+
+# Create Claude native settings.json from Home Assistant configuration
+create_claude_settings() {
+    bashio::log.info "Creating Claude native settings configuration..."
+    
+    # Read configuration from Home Assistant
+    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-sonnet-20241022')
+    local theme=$(bashio::config 'theme' 'dark')
+    local verbose_logging=$(bashio::config 'verbose_logging' 'false')
+    local max_turns=$(bashio::config 'max_turns' '10')
+    local terminal_bell=$(bashio::config 'terminal_bell' 'true')
+    local ha_notifications=$(bashio::config 'ha_notifications' 'false')
+    local notification_service=$(bashio::config 'notification_service' 'persistent_notification')
+    local context_integration=$(bashio::config 'context_integration' 'true')
+    local context_domains=$(bashio::config 'context_domains' 'climate,sensor,binary_sensor,light,switch,weather')
+    local context_max_entities=$(bashio::config 'context_max_entities' '100')
+    
+    # Convert boolean strings to JSON booleans
+    local verbose_json=$([ "$verbose_logging" = "true" ] && echo "true" || echo "false")
+    local bell_json=$([ "$terminal_bell" = "true" ] && echo "true" || echo "false")
+    local notifications_json=$([ "$ha_notifications" = "true" ] && echo "true" || echo "false")
+    local context_json=$([ "$context_integration" = "true" ] && echo "true" || echo "false")
+    
+    # Basic JSON string escaping for notification service (escape quotes and backslashes)
+    local notification_service_escaped="${notification_service//\\/\\\\}"
+    notification_service_escaped="${notification_service_escaped//\"/\\\"}"
+    
+    # Create Claude settings.json with native configuration format
+    cat > /config/claude-config/settings.json << EOF
+{
+  "model": "$claude_model",
+  "theme": "$theme",
+  "verbose": $verbose_json,
+  "maxTurns": $max_turns,
+  "terminalBell": $bell_json,
+  "homeAssistant": {
+    "notifications": $notifications_json,
+    "notificationService": "$notification_service_escaped",
+    "contextIntegration": $context_json,
+    "contextDomains": "$context_domains",
+    "contextMaxEntities": $context_max_entities
+  }
+}
+EOF
+    
+    chmod 600 /config/claude-config/settings.json
+    bashio::log.info "Claude settings.json created with native configuration"
 }
 
 # Install required tools
 install_tools() {
     bashio::log.info "Installing additional tools..."
-    apk add --no-cache ttyd jq curl
+    apk add --no-cache ttyd curl
 }
 
 # Setup credential management and security scripts
@@ -39,7 +101,7 @@ setup_security_scripts() {
         bashio::log.info "Found script modules, copying to system locations..."
         
         # Copy each script individually with error checking
-        for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security; do
+        for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security ha-context claude-automate; do
             if [ -f "/config/scripts/${script}.sh" ]; then
                 cp "/config/scripts/${script}.sh" "/usr/local/bin/${script}" && \
                 chmod +x "/usr/local/bin/${script}" && \
@@ -62,6 +124,8 @@ setup_security_scripts() {
     [ -f /usr/local/bin/app-security ] && ln -sf /usr/local/bin/app-security /usr/local/bin/app-sec
     [ -f /usr/local/bin/activity-monitor ] && ln -sf /usr/local/bin/activity-monitor /usr/local/bin/monitor
     [ -f /usr/local/bin/filesystem-security ] && ln -sf /usr/local/bin/filesystem-security /usr/local/bin/fs-sec
+    [ -f /usr/local/bin/ha-context ] && ln -sf /usr/local/bin/ha-context /usr/local/bin/ha
+    [ -f /usr/local/bin/claude-automate ] && ln -sf /usr/local/bin/claude-automate /usr/local/bin/automate
 }
 
 # Create minimal fallback scripts
@@ -100,6 +164,24 @@ ulimit -f 102400 # File size: 100MB
 echo "Basic resource limits applied"
 EOF
             ;;
+        ha-context)
+            cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Minimal fallback HA context script
+echo "Home Assistant context integration not available"
+echo "Context features require full script modules"
+exit 1
+EOF
+            ;;
+        claude-automate)
+            cat > "$script_path" << 'EOF'
+#!/bin/bash
+# Minimal fallback automation builder
+echo "Natural Language Automation Builder not available"
+echo "Automation builder requires full script modules"
+exit 1
+EOF
+            ;;
         *)
             cat > "$script_path" << 'EOF'
 #!/bin/bash
@@ -114,7 +196,7 @@ EOF
 
 # Create all fallback scripts
 create_all_fallback_scripts() {
-    for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security; do
+    for script in credentials-manager credentials-service claude-auth resource-limits app-security activity-monitor filesystem-security ha-context claude-automate; do
         create_fallback_script "$script"
     done
 }
@@ -157,7 +239,7 @@ apply_app_security() {
         bashio::log.warning "Application security script not found, applying basic controls"
         # Fallback basic application security
         export NODE_ENV=production
-        export NODE_OPTIONS="--max-old-space-size=256"
+        export NODE_OPTIONS="--max-old-space-size=256 --max-listeners=20"
         export NODE_NO_WARNINGS=1
         export NO_UPDATE_NOTIFIER=1
         npm config set audit-level moderate 2>/dev/null || true
@@ -279,6 +361,69 @@ start_credential_service() {
     /usr/local/bin/credentials-service &
 }
 
+# Setup Home Assistant context integration
+setup_context_integration() {
+    local context_integration=$(bashio::config 'context_integration' 'true')
+    
+    if [ "$context_integration" = "true" ]; then
+        bashio::log.info "Setting up Home Assistant context integration..."
+        
+        # Create cache directory for HA API responses
+        mkdir -p /config/claude-config/ha-cache
+        chmod 700 /config/claude-config/ha-cache
+        
+        # Set environment variables for context script
+        export HA_URL="http://supervisor/core"
+        export HASSIO_TOKEN="${HASSIO_TOKEN}"
+        export SUPERVISOR_TOKEN="${SUPERVISOR_TOKEN}"
+        
+        # Test HA API connectivity
+        if [ -n "${HASSIO_TOKEN}" ] && curl -s -H "Authorization: Bearer ${HASSIO_TOKEN}" "${HA_URL}/api/" > /dev/null; then
+            bashio::log.info "Home Assistant API connection verified"
+            
+            # Create welcome message for context features
+            cat > /tmp/ha_context_welcome.txt << EOF
+🏠 Home Assistant Context Integration Active
+
+Available commands:
+  ha entities [domain]     - List HA entities  
+  ha state <entity_id>     - Get entity state
+  ha summary              - System overview
+  ha help                 - Show all commands
+
+🤖 Natural Language Automation Builder Active
+
+Available commands:
+  claude-automate "description"       - Create automation from natural language
+  automate "description"              - Shortcut for claude-automate
+  
+Examples:
+  claude-automate "Turn off all lights when I say good night"
+  automate "Turn on porch light when motion detected" deploy
+  claude-automate help                - Show automation builder help
+
+EOF
+        else
+            bashio::log.warning "Home Assistant API not accessible - context features disabled"
+        fi
+    else
+        bashio::log.info "Home Assistant context integration disabled in configuration"
+    fi
+}
+
+# Create simplified Claude startup script using native settings
+create_claude_startup() {
+    cat > /tmp/start_claude.sh << 'EOF'
+#!/bin/bash
+
+# Start Claude with native settings.json configuration
+# Claude will automatically read settings from ANTHROPIC_CONFIG_DIR/settings.json
+exec claude
+EOF
+
+    chmod +x /tmp/start_claude.sh
+}
+
 # Start main web terminal
 start_web_terminal() {
     local port=7681
@@ -289,13 +434,27 @@ start_web_terminal() {
     bashio::log.info "CLAUDE_CREDENTIALS_DIRECTORY=${CLAUDE_CREDENTIALS_DIRECTORY}"
     bashio::log.info "ANTHROPIC_CONFIG_DIR=${ANTHROPIC_CONFIG_DIR}"
     bashio::log.info "HOME=${HOME}"
+    
+    # Display current settings from settings.json if it exists
+    if [ -f "/config/claude-config/settings.json" ]; then
+        bashio::log.info "Claude settings.json created successfully"
+    fi
 
-    # Run ttyd with improved security configuration
+    # Run ttyd with context integration info
+    local context_integration=$(bashio::config 'context_integration' 'true')
+    local startup_command="clear && echo 'Welcome to Claude Home!' && echo '' && echo 'Configuration loaded from settings.json'"
+    
+    if [ "$context_integration" = "true" ] && [ -f "/tmp/ha_context_welcome.txt" ]; then
+        startup_command="$startup_command && echo '' && cat /tmp/ha_context_welcome.txt"
+    fi
+    
+    startup_command="$startup_command && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && /tmp/start_claude.sh && /usr/local/bin/credentials-manager save"
+    
     exec ttyd \
         --port "${port}" \
         --interface 0.0.0.0 \
         --writable \
-        bash -c "clear && echo 'Welcome to Claude Terminal!' && echo '' && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && node \$(which claude) && /usr/local/bin/credentials-manager save"
+        bash -c "$startup_command"
 }
 
 # Main execution
@@ -310,7 +469,9 @@ main() {
     setup_filesystem_security
     start_activity_monitoring
     verify_security_integration
+    create_claude_startup
     start_credential_service
+    setup_context_integration
     start_web_terminal
 }
 

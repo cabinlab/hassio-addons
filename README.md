@@ -66,6 +66,22 @@ Features:
 
 [Documentation](apcupsd/README.md)
 
+### Claude Watchdog
+
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=claude_watchdog&repository_url=https%3A%2F%2Fgithub.com%2Fcabinlab%2Fhassio-addons)
+
+Intelligent continuous monitoring for Home Assistant using Claude AI. Runs in the background analyzing state changes and providing proactive insights, security monitoring, and optimization recommendations.
+
+Features:
+- Continuous AI-powered analysis with Claude 3.5 Haiku
+- Proactive insights and anomaly detection
+- Multi-domain monitoring (climate, security, energy, automation)
+- Cost-controlled with daily limits (~$0.36/day)
+- Smart notifications and learning patterns
+- Energy optimization and predictive maintenance
+
+[Documentation](claude-watchdog/README.md)
+
 ## Support
 
 These addons are currently experimental and unsupported. You can join the discussions with questions or suggestions.

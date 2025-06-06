@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.4.0
+
+**Home Assistant Context Integration**
+- **NEW**: Added comprehensive Home Assistant context integration for Claude
+- **NEW**: `ha` command provides direct access to HA entities and state from Claude terminal
+- **NEW**: Entity listing by domain: `ha entities climate`, `ha entities sensor`, etc.
+- **NEW**: Individual entity state access: `ha state sensor.living_room_temperature`
+- **NEW**: System overview with entity counts: `ha summary`
+- **NEW**: Configurable domain filtering - choose which entity types Claude can access
+- **NEW**: Entity limit controls to prevent information overload
+- **NEW**: Intelligent caching of HA API responses for performance
+- **NEW**: Bash-only JSON parsing - no external dependencies required
+- **SECURITY**: Read-only access with comprehensive input validation
+- **SECURITY**: Domain filtering prevents access to sensitive entity types
+- **SECURITY**: Rate limiting and caching prevent API abuse
+- Welcome screen now shows available HA context commands when enabled
+- All context data automatically available to Claude for enhanced automation assistance
+- Perfect integration with existing security framework and configuration system
+
+## 1.3.1
+
+**Configuration System Refactoring**
+- **IMPROVEMENT**: Refactored configuration system to use Claude's native settings.json format
+- **IMPROVEMENT**: Simplified startup process by removing complex CLI flag building
+- **IMPROVEMENT**: More maintainable configuration management with direct HA config → settings.json mapping
+- **IMPROVEMENT**: Cleaner terminal output without verbose environment variable logging
+- **IMPROVEMENT**: Better alignment with Claude Code's intended configuration patterns
+- Configuration changes still take effect immediately after addon restart
+- All existing configuration options remain fully supported
+- Improved startup reliability and reduced complexity
+
+## 1.3.0
+
+**Comprehensive Configuration Enhancement**
+- **NEW**: Add native Home Assistant configuration option for Claude model selection
+- **NEW**: Support for multiple Claude models via dropdown configuration UI
+- **NEW**: Theme selection (dark, light, daltonized variants) for better accessibility
+- **NEW**: Verbose logging toggle for detailed Claude operation visibility
+- **NEW**: Max turns limit to prevent runaway conversations (safety feature)
+- **NEW**: Telemetry control to disable Claude usage analytics
+- **NEW**: Terminal bell audio feedback configuration
+- **NEW**: Home Assistant notifications integration (future feature)
+- **NEW**: Configurable notification service selection
+- Available models: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku
+- Default model: claude-3-5-sonnet-20241022 (latest and most capable)
+- Enhanced startup configuration display in terminal
+- Comprehensive configuration documentation and examples
+- All settings persist across addon restarts with immediate effect
+
+## 1.2.3
+
+**Node.js Warning Suppression**
+- **FIX**: Suppress Node.js MaxListenersExceededWarning from Claude CLI
+- Add --max-listeners=20 to NODE_OPTIONS to prevent memory leak warnings
+- Improve console output cleanliness for better user experience
+
 ## 1.2.2
 
 **Web UI Access Fix**

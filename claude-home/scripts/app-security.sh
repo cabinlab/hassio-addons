@@ -32,7 +32,9 @@ configure_nodejs_security() {
     
     # Set Node.js security environment variables
     export NODE_ENV=production
-    export NODE_OPTIONS="--max-old-space-size=256 --max-semi-space-size=64"
+    export NODE_OPTIONS="--max-old-space-size=256 --max-semi-space-size=64 --max-listeners=20"
+    
+    # Note: --max-listeners=20 prevents "MaxListenersExceededWarning" from Claude CLI
     
     # Disable Node.js deprecation warnings in production
     export NODE_NO_WARNINGS=1
