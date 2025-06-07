@@ -1,29 +1,18 @@
 # Configuration
 
-This add-on provides native apcupsd integration for monitoring APC UPS devices with an enhanced user interface.
+Monitor your APC UPS device with automatic shutdown protection when power fails.
 
-## Options
+## Basic Settings
 
-## Configuration Options
+**name**: Display name for your UPS device  
+**cable**: Connection type (USB, Smart serial, Simple serial, Ethernet)  
+**type**: Communication protocol (USB, Network, APC Smart, etc.)  
+**device**: Device path or IP address (leave empty for auto-detection)  
 
-### Basic Setup
-- **UPS Name**: Display name for your device
-- **Cable Type**: Connection method (USB, Smart, Simple, Ethernet, etc.)  
-- **UPS Protocol**: Communication type (USB, Network, APC Smart, etc.)
-- **Device**: Specific path or IP (leave empty for auto-detection)
+## Power Management
 
-### Power Management  
-- **Battery Shutdown Level** (1-95%): When to shutdown (default: 5%)
-- **Minutes Before Shutdown** (1-60): Wait time on battery (default: 3)
-- **Max Runtime Seconds** (0-7200): Hard time limit (0 = disabled)
-- **Shutdown Delay** (0-300): Grace period before force-kill (default: 0)
-
-### Network Settings
-- **Port** (1024-65535): Communication port (default: 3551)
-- **Timeout Seconds** (10-600): Network timeout (default: 60)
-
-### Advanced Options
-- **Advanced Options**: Expert-level apcupsd configuration overrides
+**battery_level**: Battery percentage that triggers shutdown (1-95%, default: 5%)  
+**timeout_minutes**: Minutes to wait on battery before shutdown (1-60, default: 3)
 
 ### Cable Types
 

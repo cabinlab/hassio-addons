@@ -68,16 +68,12 @@ sanitize_config_value() {
 # Get and validate configuration
 bashio::log.info "Loading APC UPS configuration..."
 
-NAME=$(jq --raw-output ".ups_name" $CONFIG_PATH)
-CABLE=$(jq --raw-output ".cable_type" $CONFIG_PATH)
-TYPE=$(jq --raw-output ".ups_protocol" $CONFIG_PATH)
+NAME=$(jq --raw-output ".name" $CONFIG_PATH)
+CABLE=$(jq --raw-output ".cable" $CONFIG_PATH)
+TYPE=$(jq --raw-output ".type" $CONFIG_PATH)
 DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
-BATTERY_LEVEL=$(jq --raw-output ".battery_shutdown_level" $CONFIG_PATH)
-MINUTES_ON_BATTERY=$(jq --raw-output ".minutes_before_shutdown" $CONFIG_PATH)
-MAX_TIME_ON_BATTERY=$(jq --raw-output ".max_runtime_seconds" $CONFIG_PATH)
-KILL_DELAY=$(jq --raw-output ".shutdown_delay" $CONFIG_PATH)
-NETWORK_PORT=$(jq --raw-output ".port" $CONFIG_PATH)
-NETWORK_TIMEOUT=$(jq --raw-output ".timeout_seconds" $CONFIG_PATH)
+BATTERY_LEVEL=$(jq --raw-output ".battery_level" $CONFIG_PATH)
+MINUTES_ON_BATTERY=$(jq --raw-output ".timeout_minutes" $CONFIG_PATH)
 
 # Validate all inputs
 error=0
@@ -131,7 +127,7 @@ else
     bashio::log.info "Device auto-detection enabled"
 fi
 
-# Configure common apcupsd settings
+# Configure apcupsd settings
 if [[ -n "$BATTERY_LEVEL" && "$BATTERY_LEVEL" != "null" ]]; then
     sed -i "s/^#\?BATTERYLEVEL\( .*\)\?\$/BATTERYLEVEL $BATTERY_LEVEL/g" $UPS_CONFIG_PATH
     bashio::log.info "Battery level threshold set to: $BATTERY_LEVEL%"
@@ -142,74 +138,6 @@ if [[ -n "$MINUTES_ON_BATTERY" && "$MINUTES_ON_BATTERY" != "null" ]]; then
     bashio::log.info "Minutes on battery before shutdown set to: $MINUTES_ON_BATTERY"
 fi
 
-if [[ -n "$MAX_TIME_ON_BATTERY" && "$MAX_TIME_ON_BATTERY" != "null" && "$MAX_TIME_ON_BATTERY" != "0" ]]; then
-    sed -i "s/^#\?MAXTIME\( .*\)\?\$/MAXTIME $MAX_TIME_ON_BATTERY/g" $UPS_CONFIG_PATH
-    bashio::log.info "Maximum time on battery set to: $MAX_TIME_ON_BATTERY seconds"
-fi
-
-if [[ -n "$KILL_DELAY" && "$KILL_DELAY" != "null" ]]; then
-    sed -i "s/^#\?KILLDELAY\( .*\)\?\$/KILLDELAY $KILL_DELAY/g" $UPS_CONFIG_PATH
-    bashio::log.info "Kill delay set to: $KILL_DELAY seconds"
-fi
-
-if [[ -n "$NETWORK_PORT" && "$NETWORK_PORT" != "null" ]]; then
-    sed -i "s/^#\?NISPORT\( .*\)\?\$/NISPORT $NETWORK_PORT/g" $UPS_CONFIG_PATH
-    bashio::log.info "Network port set to: $NETWORK_PORT"
-fi
-
-if [[ -n "$NETWORK_TIMEOUT" && "$NETWORK_TIMEOUT" != "null" ]]; then
-    sed -i "s/^#\?NETTIME\( .*\)\?\$/NETTIME $NETWORK_TIMEOUT/g" $UPS_CONFIG_PATH
-    bashio::log.info "Network timeout set to: $NETWORK_TIMEOUT seconds"
-fi
-
-# Process custom apcupsd configuration with validation
-extra_keys=$(jq --raw-output ".advanced_options[].key" $CONFIG_PATH)
-if [[ -n "$extra_keys" ]]; then
-    bashio::log.info "Processing custom apcupsd configuration options..."
-    
-    IFS=$'\n' read -rd '' -a keys <<< "$extra_keys" || true
-    extra_count=0
-    
-    for key in "${keys[@]}"; do
-        # Limit number of extra config options
-        if [[ $extra_count -ge 50 ]]; then
-            bashio::log.warning "Maximum 50 custom configuration options allowed"
-            break
-        fi
-        
-        # Validate key format (alphanumeric and underscore only)
-        if [[ ! "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || [[ ${#key} -gt 32 ]]; then
-            bashio::log.warning "Skipping invalid configuration key: $key"
-            continue
-        fi
-        
-        val=$(jq --raw-output ".advanced_options[] | select(.key == \"$key\").val" $CONFIG_PATH)
-        
-        if [[ -n "$val" ]]; then
-            # Sanitize value and limit length
-            if [[ ${#val} -gt 256 ]]; then
-                bashio::log.warning "Configuration value too long for $key (max 256 chars)"
-                continue
-            fi
-            
-            sanitized_val=$(sanitize_config_value "$val")
-            
-            if grep -q "^#\?$key\( .*\)\?\$" $UPS_CONFIG_PATH; then
-                # Replace existing config
-                sed -i "s/^#\?$key\( .*\)\?\$/$key $sanitized_val/g" $UPS_CONFIG_PATH
-            else
-                # Add to bottom
-                echo "$key $sanitized_val" >> $UPS_CONFIG_PATH
-            fi
-            bashio::log.info "Set $key = $val"
-            ((extra_count++))
-        else
-            # Remove from config
-            sed -i "s/^#\?$key\( .*\)\?\$//g" $UPS_CONFIG_PATH
-            bashio::log.info "Removed $key from configuration"
-        fi
-    done
-fi
 
 # Copy custom scripts with validation
 bashio::log.info "Checking for custom event scripts..."
