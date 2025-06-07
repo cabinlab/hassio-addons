@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2025-01-07
+
+### Enhanced
+- Improved configuration UI with clearer field organization
+- Added "Required" and "Optional" labels to field descriptions for better UX
+- Reorganized fields to show required settings (cable, type) first
+- Updated field names to be more concise and user-friendly
+- Enhanced help text with practical examples and recommendations
+- Made cable and type fields properly required (removed optional ? suffix)
+- Improved default values: battery_level 5% → 10%, timeout_minutes 3 → 5
+
 ## [2.0.1] - 2025-06-06
 
 ### Fixed

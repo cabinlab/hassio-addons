@@ -1,26 +1,28 @@
 configuration:
-  name:
-    name: "UPS Display Name"
-    description: "Friendly name for your UPS device (e.g., 'Office UPS', 'Server Room UPS'). This appears in Home Assistant sensors and logs."
-
+  # Required fields - these appear first and are marked as required in the UI
   cable:
-    name: "Cable Connection Type"
-    description: "Select how your UPS connects to the system. Choose 'USB' for modern UPS devices, 'Smart' for APC smart serial cables, or 'Ethernet' for network-connected UPS devices."
+    name: "Cable Type"
+    description: "Required: Select how your UPS connects to the system. For modern UPS devices, choose 'USB'. For serial connections, select your specific cable model (e.g., '940-0024C'). Network UPS should use 'Ethernet'."
   
   type:
-    name: "UPS Communication Protocol"
-    description: "Communication method your UPS uses. 'USB' is most common, 'Network' for UPS with network cards, 'APC Smart' for serial smart UPS devices."
+    name: "Communication Protocol"
+    description: "Required: Must match your cable selection. Choose 'USB' for USB cables, 'Network' for ethernet connections, or 'APC Smart' for smart serial cables."
   
+  # Optional fields - these have defaults and can be left unchanged
+  name:
+    name: "UPS Display Name"
+    description: "Optional: A friendly name for your UPS (e.g., 'Office UPS'). Appears in Home Assistant sensors. Default: 'APC UPS'"
+
   device:
-    name: "Device Path or IP Address"
-    description: "Leave empty for USB auto-detection. For network UPS: enter IP address (e.g., '192.168.1.100'). For serial: enter device path (e.g., '/dev/ttyS0')."
+    name: "Device Path or IP"
+    description: "Optional: Usually auto-detected for USB. Only set for network UPS (IP like '192.168.1.100') or serial UPS (path like '/dev/ttyS0')."
 
   battery_level:
-    name: "Shutdown Battery Level (%)"
-    description: "System shuts down when battery drops to this percentage. Recommended: 10-20%. Lower values risk unexpected power loss during extended outages."
+    name: "Shutdown at Battery %"
+    description: "Optional: Shutdown when battery reaches this percentage. Default: 10%. Lower = longer runtime but risks sudden power loss."
   
   timeout_minutes:
-    name: "Maximum Battery Runtime (minutes)"
-    description: "Shutdown after this time on battery, regardless of charge level. Prevents battery over-discharge during long power outages. Recommended: 5-10 minutes."
+    name: "Max Battery Runtime"
+    description: "Optional: Shutdown after this many minutes on battery. Default: 5. Prevents deep discharge during extended outages."
 
 network: {}
