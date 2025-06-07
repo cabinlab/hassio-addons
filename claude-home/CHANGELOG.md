@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0
+## 1.4.0 - 2025-06-06
 
 **Home Assistant Context Integration**
 - **NEW**: Added comprehensive Home Assistant context integration for Claude
@@ -19,7 +19,7 @@
 - All context data automatically available to Claude for enhanced automation assistance
 - Perfect integration with existing security framework and configuration system
 
-## 1.3.1
+## 1.3.1 - 2025-06-06
 
 **Configuration System Refactoring**
 - **IMPROVEMENT**: Refactored configuration system to use Claude's native settings.json format
@@ -31,7 +31,7 @@
 - All existing configuration options remain fully supported
 - Improved startup reliability and reduced complexity
 
-## 1.3.0
+## 1.3.0 - 2025-06-06
 
 **Comprehensive Configuration Enhancement**
 - **NEW**: Add native Home Assistant configuration option for Claude model selection
@@ -49,14 +49,14 @@
 - Comprehensive configuration documentation and examples
 - All settings persist across addon restarts with immediate effect
 
-## 1.2.3
+## 1.2.3 - 2025-06-06
 
 **Node.js Warning Suppression**
 - **FIX**: Suppress Node.js MaxListenersExceededWarning from Claude CLI
 - Add --max-listeners=20 to NODE_OPTIONS to prevent memory leak warnings
 - Improve console output cleanliness for better user experience
 
-## 1.2.2
+## 1.2.2 - 2025-06-06
 
 **Web UI Access Fix**
 - **FIX**: Resolved web UI accessibility issue by binding to 0.0.0.0 instead of localhost
@@ -64,7 +64,7 @@
 - Web terminal now properly accessible from Home Assistant ingress
 - Improved network configuration for container environment
 
-## 1.2.1
+## 1.2.1 - 2025-06-06
 
 **Startup Reliability Fix**
 - **FIX**: Resolved script module loading failure during container startup
@@ -74,7 +74,7 @@
 - Enhanced logging for better troubleshooting of startup issues
 - Ensured backward compatibility with minimal fallback implementations
 
-## 1.2.0
+## 1.2.0 - 2025-06-06
 
 **Major Security Enhancement Update**
 - **SECURITY**: Implemented comprehensive container security framework
@@ -96,14 +96,14 @@
 - Added convenience aliases for all security tools
 - Improved error handling and fallback mechanisms throughout
 
-## 1.1.0
+## 1.1.0 - 2025-06-06
 
 **Rebranding and Name Change**
 - Renamed from "Claude Terminal" to "Claude Home"
 - Updated all references and branding to reflect new name
 - No functional changes from previous version
 
-## 1.0.2
+## 1.0.2 - 2025-06-06
 
 **Security Improvements**
 - **SECURITY**: Removed unnecessary file system access to other add-ons directory
@@ -114,11 +114,11 @@
 - **SECURITY**: Added file size limits for credential files (max 10KB)
 - **SECURITY**: Improved error handling and path validation throughout
 
-## 1.0.1
+## 1.0.1 - 2025-06-06
 
 - Minor bug fixes and stability improvements
 
-## 1.0.0
+## 1.0.0 - 2025-06-06
 
 - First stable release of Claude Terminal add-on:
   - Web-based terminal interface using ttyd
