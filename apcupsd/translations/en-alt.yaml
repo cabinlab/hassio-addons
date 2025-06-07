@@ -1,26 +1,26 @@
 configuration:
   name:
-    name: "UPS Display Name [OPTIONAL]"
+    name: "UPS Display Name (Optional)"
     description: "A friendly name for your UPS (e.g., 'Office UPS'). Appears in Home Assistant sensors. Default: 'APC UPS'"
 
   cable:
-    name: "🔴 Cable Type [REQUIRED]"
+    name: "* Cable Type (Required)"
     description: "Select how your UPS connects to the system. For modern UPS devices, choose 'USB'. For serial connections, select your specific cable model. Network UPS should use 'Ethernet'."
   
   type:
-    name: "🔴 Communication Protocol [REQUIRED]"  
+    name: "* Communication Protocol (Required)"  
     description: "Must match your cable selection. Choose 'USB' for USB cables, 'Network' for ethernet connections, or 'APC Smart' for smart serial cables."
   
   device:
-    name: "Device Path or IP [OPTIONAL]"
+    name: "Device Path or IP (Optional)"
     description: "Usually auto-detected for USB. Only set for network UPS (IP like '192.168.1.100') or serial UPS (path like '/dev/ttyS0')."
 
   battery_level:
-    name: "Shutdown Battery Level [OPTIONAL]"
+    name: "Shutdown Battery Level % (Optional)"
     description: "Shutdown when battery reaches this percentage. Default: 10%. Lower = longer runtime but risks sudden power loss."
   
   timeout_minutes:
-    name: "Max Battery Runtime [OPTIONAL]"
+    name: "Max Battery Runtime (Optional)"
     description: "Shutdown after this many minutes on battery. Default: 5. Prevents deep discharge during extended outages."
 
 network: {}

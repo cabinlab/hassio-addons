@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2025-01-07
+
+### Enhanced
+- Moved UPS Display Name back to the top of configuration fields
+- Added clear visual indicators for required vs optional fields:
+  - Required fields marked with 🔴 emoji and [REQUIRED] tag
+  - Optional fields marked with [OPTIONAL] tag
+- Improved field labeling for better clarity at a glance
+- Created alternative translation without emojis for compatibility
+
 ## [2.0.2] - 2025-01-07
 
 ### Enhanced
