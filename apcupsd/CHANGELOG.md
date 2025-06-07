@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2025-06-06
+
+### Fixed
+- Revert to simple chmod a+x approach - previous fixes added unnecessary BuildKit dependency
+
 ## [2.0.2] - 2025-06-06
 
 ### Fixed

@@ -19,10 +19,11 @@ RUN apk update && apk add --no-cache \
 # Create symbolic link for sendmail
 RUN ln -sf /usr/bin/msmtp /usr/sbin/sendmail
 
-# Copy scripts with executable permissions
-COPY --chmod=755 run.sh /
-COPY --chmod=755 hassio_poweroff /sbin/poweroff
-COPY --chmod=755 hassio_reboot /sbin/reboot
+# Copy scripts and set permissions
+COPY run.sh /
+COPY hassio_poweroff /sbin/poweroff
+COPY hassio_reboot /sbin/reboot
+RUN chmod a+x /run.sh /sbin/poweroff /sbin/reboot
 
 WORKDIR /data
 
