@@ -21,9 +21,9 @@ RUN ln -sf /usr/bin/msmtp /usr/sbin/sendmail
 
 # Copy scripts and set permissions
 COPY run.sh /
-COPY hassio_poweroff /sbin/poweroff
-COPY hassio_reboot /sbin/reboot
-RUN chmod a+x /run.sh /sbin/poweroff /sbin/reboot
+COPY hassio_poweroff /etc/apcupsd/doshutdown
+COPY hassio_reboot /etc/apcupsd/doreboot
+RUN chmod +x /run.sh /etc/apcupsd/doshutdown /etc/apcupsd/doreboot
 
 WORKDIR /data
 
