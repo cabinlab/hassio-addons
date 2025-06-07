@@ -1,16 +1,31 @@
 # Configuration
 
-This add-on provides native apcupsd integration for monitoring APC UPS devices.
+This add-on provides native apcupsd integration for monitoring APC UPS devices with an enhanced user interface.
 
 ## Options
 
 ### Basic Configuration
 
 - **name** (string): Display name for your UPS device
-- **cable** (string): Cable type used to connect to UPS
-- **type** (string): UPS communication type
+- **cable** (dropdown): Cable type used to connect to UPS
+- **type** (dropdown): UPS communication type  
 - **device** (string): Device path or IP address (leave empty for auto-detection)
-- **extra** (list): Additional apcupsd configuration options
+
+### Power Management Settings
+
+- **battery_level** (1-95): Battery percentage threshold for shutdown (default: 5%)
+- **minutes_on_battery** (1-60): Minutes on battery before shutdown (default: 3)
+- **max_time_on_battery** (0-7200): Maximum time on battery in seconds (0 = disabled, default: 0)
+- **kill_delay** (0-300): Delay before killing processes in seconds (default: 0)
+
+### Network Settings
+
+- **network_port** (1024-65535): Network port for apcupsd daemon (default: 3551)
+- **network_timeout** (10-600): Network timeout in seconds (default: 60)
+
+### Advanced Configuration
+
+- **extra** (list): Additional apcupsd configuration options for expert users
 
 ### Cable Types
 

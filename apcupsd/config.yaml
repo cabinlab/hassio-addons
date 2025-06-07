@@ -43,14 +43,26 @@ options:
   cable: "usb"
   type: "usb"
   device: ""
+  battery_level: 5
+  minutes_on_battery: 3
+  max_time_on_battery: 0
+  kill_delay: 0
+  network_port: 3551
+  network_timeout: 60
   extra: []
 
 # Configuration schema
 schema:
-  name: str
-  cable: str
-  type: str
-  device: str
+  name: "str?"
+  cable: "list(usb|smart|simple|ether|940-0024C|940-0095A|940-0095B|940-0095C|940-1524C|940-0128A|MAM-04-02-2000)?"
+  type: "list(usb|net|apcsmart|dumb|pcnet|snmp|test|modbus)?"
+  device: "str?"
+  battery_level: "int(1,95)?"
+  minutes_on_battery: "int(1,60)?"
+  max_time_on_battery: "int(0,7200)?"
+  kill_delay: "int(0,300)?"
+  network_port: "int(1024,65535)?"
+  network_timeout: "int(10,600)?"
   extra:
     - key: str
       val: str

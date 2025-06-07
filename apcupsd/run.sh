@@ -72,6 +72,12 @@ NAME=$(jq --raw-output ".name" $CONFIG_PATH)
 CABLE=$(jq --raw-output ".cable" $CONFIG_PATH)
 TYPE=$(jq --raw-output ".type" $CONFIG_PATH)
 DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
+BATTERY_LEVEL=$(jq --raw-output ".battery_level" $CONFIG_PATH)
+MINUTES_ON_BATTERY=$(jq --raw-output ".minutes_on_battery" $CONFIG_PATH)
+MAX_TIME_ON_BATTERY=$(jq --raw-output ".max_time_on_battery" $CONFIG_PATH)
+KILL_DELAY=$(jq --raw-output ".kill_delay" $CONFIG_PATH)
+NETWORK_PORT=$(jq --raw-output ".network_port" $CONFIG_PATH)
+NETWORK_TIMEOUT=$(jq --raw-output ".network_timeout" $CONFIG_PATH)
 
 # Validate all inputs
 error=0
@@ -123,6 +129,37 @@ if [[ -n "$DEVICE" ]]; then
 else
     sed -i "s/^#\?DEVICE\( .*\)\?\$//g" $UPS_CONFIG_PATH
     bashio::log.info "Device auto-detection enabled"
+fi
+
+# Configure common apcupsd settings
+if [[ -n "$BATTERY_LEVEL" && "$BATTERY_LEVEL" != "null" ]]; then
+    sed -i "s/^#\?BATTERYLEVEL\( .*\)\?\$/BATTERYLEVEL $BATTERY_LEVEL/g" $UPS_CONFIG_PATH
+    bashio::log.info "Battery level threshold set to: $BATTERY_LEVEL%"
+fi
+
+if [[ -n "$MINUTES_ON_BATTERY" && "$MINUTES_ON_BATTERY" != "null" ]]; then
+    sed -i "s/^#\?MINUTES\( .*\)\?\$/MINUTES $MINUTES_ON_BATTERY/g" $UPS_CONFIG_PATH
+    bashio::log.info "Minutes on battery before shutdown set to: $MINUTES_ON_BATTERY"
+fi
+
+if [[ -n "$MAX_TIME_ON_BATTERY" && "$MAX_TIME_ON_BATTERY" != "null" && "$MAX_TIME_ON_BATTERY" != "0" ]]; then
+    sed -i "s/^#\?MAXTIME\( .*\)\?\$/MAXTIME $MAX_TIME_ON_BATTERY/g" $UPS_CONFIG_PATH
+    bashio::log.info "Maximum time on battery set to: $MAX_TIME_ON_BATTERY seconds"
+fi
+
+if [[ -n "$KILL_DELAY" && "$KILL_DELAY" != "null" ]]; then
+    sed -i "s/^#\?KILLDELAY\( .*\)\?\$/KILLDELAY $KILL_DELAY/g" $UPS_CONFIG_PATH
+    bashio::log.info "Kill delay set to: $KILL_DELAY seconds"
+fi
+
+if [[ -n "$NETWORK_PORT" && "$NETWORK_PORT" != "null" ]]; then
+    sed -i "s/^#\?NISPORT\( .*\)\?\$/NISPORT $NETWORK_PORT/g" $UPS_CONFIG_PATH
+    bashio::log.info "Network port set to: $NETWORK_PORT"
+fi
+
+if [[ -n "$NETWORK_TIMEOUT" && "$NETWORK_TIMEOUT" != "null" ]]; then
+    sed -i "s/^#\?NETTIME\( .*\)\?\$/NETTIME $NETWORK_TIMEOUT/g" $UPS_CONFIG_PATH
+    bashio::log.info "Network timeout set to: $NETWORK_TIMEOUT seconds"
 fi
 
 # Process extra configuration with validation
