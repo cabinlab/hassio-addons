@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2025-06-06
+
+### Fixed
+- Fix Docker build by setting executable permissions during COPY instead of chmod
+
 ## [2.0.1] - 2025-06-06
 
 ### Fixed
