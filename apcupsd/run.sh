@@ -68,16 +68,16 @@ sanitize_config_value() {
 # Get and validate configuration
 bashio::log.info "Loading APC UPS configuration..."
 
-NAME=$(jq --raw-output ".name" $CONFIG_PATH)
-CABLE=$(jq --raw-output ".cable" $CONFIG_PATH)
-TYPE=$(jq --raw-output ".type" $CONFIG_PATH)
-DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
-BATTERY_LEVEL=$(jq --raw-output ".battery_level" $CONFIG_PATH)
-MINUTES_ON_BATTERY=$(jq --raw-output ".minutes_on_battery" $CONFIG_PATH)
-MAX_TIME_ON_BATTERY=$(jq --raw-output ".max_time_on_battery" $CONFIG_PATH)
-KILL_DELAY=$(jq --raw-output ".kill_delay" $CONFIG_PATH)
-NETWORK_PORT=$(jq --raw-output ".network_port" $CONFIG_PATH)
-NETWORK_TIMEOUT=$(jq --raw-output ".network_timeout" $CONFIG_PATH)
+NAME=$(jq --raw-output ".ups_name" $CONFIG_PATH)
+CABLE=$(jq --raw-output ".connection_cable" $CONFIG_PATH)
+TYPE=$(jq --raw-output ".ups_type" $CONFIG_PATH)
+DEVICE=$(jq --raw-output ".device_path" $CONFIG_PATH)
+BATTERY_LEVEL=$(jq --raw-output ".shutdown_battery_percent" $CONFIG_PATH)
+MINUTES_ON_BATTERY=$(jq --raw-output ".shutdown_minutes_on_battery" $CONFIG_PATH)
+MAX_TIME_ON_BATTERY=$(jq --raw-output ".maximum_battery_runtime_seconds" $CONFIG_PATH)
+KILL_DELAY=$(jq --raw-output ".graceful_shutdown_delay_seconds" $CONFIG_PATH)
+NETWORK_PORT=$(jq --raw-output ".daemon_port" $CONFIG_PATH)
+NETWORK_TIMEOUT=$(jq --raw-output ".network_timeout_seconds" $CONFIG_PATH)
 
 # Validate all inputs
 error=0
@@ -162,10 +162,10 @@ if [[ -n "$NETWORK_TIMEOUT" && "$NETWORK_TIMEOUT" != "null" ]]; then
     bashio::log.info "Network timeout set to: $NETWORK_TIMEOUT seconds"
 fi
 
-# Process extra configuration with validation
-extra_keys=$(jq --raw-output ".extra[].key" $CONFIG_PATH)
+# Process custom apcupsd configuration with validation
+extra_keys=$(jq --raw-output ".custom_apcupsd_options[].key" $CONFIG_PATH)
 if [[ -n "$extra_keys" ]]; then
-    bashio::log.info "Processing extra configuration options..."
+    bashio::log.info "Processing custom apcupsd configuration options..."
     
     IFS=$'\n' read -rd '' -a keys <<< "$extra_keys" || true
     extra_count=0
@@ -173,7 +173,7 @@ if [[ -n "$extra_keys" ]]; then
     for key in "${keys[@]}"; do
         # Limit number of extra config options
         if [[ $extra_count -ge 50 ]]; then
-            bashio::log.warning "Maximum 50 extra configuration options allowed"
+            bashio::log.warning "Maximum 50 custom configuration options allowed"
             break
         fi
         
@@ -183,7 +183,7 @@ if [[ -n "$extra_keys" ]]; then
             continue
         fi
         
-        val=$(jq --raw-output ".extra[] | select(.key == \"$key\").val" $CONFIG_PATH)
+        val=$(jq --raw-output ".custom_apcupsd_options[] | select(.key == \"$key\").val" $CONFIG_PATH)
         
         if [[ -n "$val" ]]; then
             # Sanitize value and limit length
