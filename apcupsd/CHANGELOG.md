@@ -1,20 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.0.3] - 2025-06-06
-
-### Fixed
-- Revert to simple chmod a+x approach - previous fixes added unnecessary BuildKit dependency
-
-## [2.0.2] - 2025-06-06
-
-### Fixed
-- Fix Docker build by setting executable permissions during COPY instead of chmod
-
 ## [2.0.1] - 2025-06-06
 
 ### Fixed
 - Add apk update before package installation to resolve installation failures
+- Fix apcupsd script placement - copy to /etc/apcupsd/ instead of overwriting system binaries
 - Ensure package repository index is current before installing apcupsd
 
 ## [2.0.0] - 2025-06-06
