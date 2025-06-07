@@ -1,0 +1,90 @@
+configuration:
+  # UPS Identification Section
+  name:
+    name: "UPS Name"
+    description: "Friendly display name for your UPS device (e.g., 'Office UPS', 'Server Room UPS'). This name will appear in Home Assistant sensors and logs."
+
+  # Connection Settings Section  
+  cable:
+    name: "Cable Type"
+    description: "Select the cable type that connects your UPS to the system. For modern USB UPS devices, choose 'USB'. For older serial connections, choose the appropriate cable model. Network UPS devices should use 'Ethernet'."
+  
+  type:
+    name: "UPS Communication Type"
+    description: "Choose the communication protocol your UPS supports. 'USB' is most common for modern UPS devices. 'Network' is for UPS with network cards. 'APC Smart' is for older serial smart UPS devices."
+  
+  device:
+    name: "Device Path or IP Address"
+    description: "For USB UPS: Leave empty for auto-detection. For network UPS: Enter IP address (e.g., '192.168.1.100'). For serial UPS: Enter device path (e.g., '/dev/ttyS0')."
+
+  # Power Management Settings Section
+  battery_level:
+    name: "Battery Shutdown Level (%)"
+    description: "When battery charge drops to this percentage, the system will initiate shutdown. Recommended: 10-20% for most setups. Lower values risk unexpected power loss."
+  
+  timeout_minutes:
+    name: "Battery Timeout (minutes)"
+    description: "Maximum time to run on battery before shutdown, regardless of battery level. Prevents prolonged power outages from completely draining the battery."
+
+  # Advanced Power Settings Section
+  max_battery_time:
+    name: "Maximum Battery Runtime (seconds)"
+    description: "Maximum time in seconds the UPS can run on battery. Set to 0 to disable this limit. Useful for preventing over-discharge during extended outages."
+  
+  kill_delay:
+    name: "Process Kill Delay (seconds)"
+    description: "Time to wait before forcibly killing processes during shutdown. Set to 0 for immediate shutdown. Higher values allow more time for graceful service stops."
+  
+  return_charge:
+    name: "Return Charge Level (%)"
+    description: "Battery charge percentage required before system will automatically restart after power is restored. Prevents frequent restarts during unstable power."
+
+  # Network Settings Section
+  network_port:
+    name: "Network Port"
+    description: "TCP port for apcupsd network communication. Default 3551 works for most setups. Only change if you have port conflicts or specific network requirements."
+  
+  network_timeout:
+    name: "Network Timeout (seconds)"
+    description: "How long to wait for network UPS responses before timing out. Increase for slow networks or distant UPS devices. Decrease for faster failure detection."
+
+  # Monitoring Settings Section
+  self_test_interval:
+    name: "Self-Test Interval"
+    description: "How often the UPS performs automatic battery self-tests. '336' = 2 weeks (recommended), '168' = 1 week, '72' = 3 days, '24' = daily, 'never' = disabled."
+  
+  alarm_delay:
+    name: "Alarm Delay (seconds)"
+    description: "Time to wait before sounding UPS alarm after power failure. '0' = immediate, '30' = 30 seconds (recommended), '60' = 1 minute, '300' = 5 minutes, 'always' = never alarm."
+
+  # Email Notifications Section
+  enable_email:
+    name: "Enable Email Notifications"
+    description: "Send email alerts for UPS events like power failures, battery issues, and communication problems. Requires SMTP configuration below."
+  
+  smtp_server:
+    name: "SMTP Server"
+    description: "Email server hostname for sending notifications (e.g., 'smtp.gmail.com', 'mail.example.com'). Required when email notifications are enabled."
+  
+  smtp_port:
+    name: "SMTP Port"
+    description: "Email server port. Common values: 587 (TLS), 465 (SSL), 25 (unencrypted). Most modern servers use 587."
+  
+  smtp_username:
+    name: "SMTP Username"
+    description: "Username for email server authentication. Usually your full email address for services like Gmail."
+  
+  smtp_password:
+    name: "SMTP Password"
+    description: "Password for email server authentication. For Gmail, use an App Password instead of your regular password for better security."
+  
+  email_to:
+    name: "Notification Email Address"
+    description: "Email address to receive UPS notifications. Can be different from the sending address. Separate multiple addresses with commas."
+
+  # Debug Options Section
+  debug_level:
+    name: "Log Level"
+    description: "Amount of information to log. 'Error' = only errors, 'Warn' = errors and warnings, 'Info' = normal operation (recommended), 'Debug' = detailed troubleshooting info."
+
+network: {}

@@ -37,21 +37,80 @@ ports:
 ports_description:
   3551/tcp: "APC UPS daemon communication port"
 
+# Configuration options with logical grouping and sensible defaults
 options:
+  # UPS Identification
   name: "APC UPS"
+  
+  # Connection Settings
   cable: "usb"
   type: "usb"
   device: ""
-  battery_level: 5
-  timeout_minutes: 3
+  
+  # Power Management Settings
+  battery_level: 10
+  timeout_minutes: 5
+  
+  # Advanced Power Settings (optional)
+  max_battery_time: 0
+  kill_delay: 0
+  return_charge: 15
+  
+  # Network Settings (for network UPS only)
+  network_port: 3551
+  network_timeout: 60
+  
+  # Monitoring Settings
+  self_test_interval: "336"
+  alarm_delay: "30"
+  
+  # Email Notifications
+  enable_email: false
+  smtp_server: ""
+  smtp_port: 587
+  smtp_username: ""
+  smtp_password: ""
+  email_to: ""
+  
+  # Debug Options
+  debug_level: "info"
 
 schema:
+  # UPS Identification
   name: "str?"
+  
+  # Connection Settings
   cable: "list(usb|smart|simple|ether|940-0024C|940-0095A|940-0095B|940-0095C|940-1524C|940-0128A|MAM-04-02-2000)?"
   type: "list(usb|net|apcsmart|dumb|pcnet|snmp|test|modbus)?"
   device: "str?"
-  battery_level: "int(1,95)?"
+  
+  # Power Management Settings
+  battery_level: "int(5,95)?"
   timeout_minutes: "int(1,60)?"
+  
+  # Advanced Power Settings
+  max_battery_time: "int(0,7200)?"
+  kill_delay: "int(0,300)?"
+  return_charge: "int(0,100)?"
+  
+  # Network Settings
+  network_port: "int(1024,65535)?"
+  network_timeout: "int(30,300)?"
+  
+  # Monitoring Settings
+  self_test_interval: "list(336|168|72|24|never)?"
+  alarm_delay: "list(0|30|60|300|always)?"
+  
+  # Email Notifications
+  enable_email: "bool?"
+  smtp_server: "str?"
+  smtp_port: "int(25,65535)?"
+  smtp_username: "str?"
+  smtp_password: "password?"
+  email_to: "str?"
+  
+  # Debug Options
+  debug_level: "list(error|warn|info|debug)?"
 
 # Panel configuration
 panel_icon: mdi:battery-plus
