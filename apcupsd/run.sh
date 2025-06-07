@@ -69,15 +69,15 @@ sanitize_config_value() {
 bashio::log.info "Loading APC UPS configuration..."
 
 NAME=$(jq --raw-output ".ups_name" $CONFIG_PATH)
-CABLE=$(jq --raw-output ".connection_cable" $CONFIG_PATH)
-TYPE=$(jq --raw-output ".ups_type" $CONFIG_PATH)
-DEVICE=$(jq --raw-output ".device_path" $CONFIG_PATH)
-BATTERY_LEVEL=$(jq --raw-output ".shutdown_battery_percent" $CONFIG_PATH)
-MINUTES_ON_BATTERY=$(jq --raw-output ".shutdown_minutes_on_battery" $CONFIG_PATH)
-MAX_TIME_ON_BATTERY=$(jq --raw-output ".maximum_battery_runtime_seconds" $CONFIG_PATH)
-KILL_DELAY=$(jq --raw-output ".graceful_shutdown_delay_seconds" $CONFIG_PATH)
-NETWORK_PORT=$(jq --raw-output ".daemon_port" $CONFIG_PATH)
-NETWORK_TIMEOUT=$(jq --raw-output ".network_timeout_seconds" $CONFIG_PATH)
+CABLE=$(jq --raw-output ".cable_type" $CONFIG_PATH)
+TYPE=$(jq --raw-output ".ups_protocol" $CONFIG_PATH)
+DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
+BATTERY_LEVEL=$(jq --raw-output ".battery_shutdown_level" $CONFIG_PATH)
+MINUTES_ON_BATTERY=$(jq --raw-output ".minutes_before_shutdown" $CONFIG_PATH)
+MAX_TIME_ON_BATTERY=$(jq --raw-output ".max_runtime_seconds" $CONFIG_PATH)
+KILL_DELAY=$(jq --raw-output ".shutdown_delay" $CONFIG_PATH)
+NETWORK_PORT=$(jq --raw-output ".port" $CONFIG_PATH)
+NETWORK_TIMEOUT=$(jq --raw-output ".timeout_seconds" $CONFIG_PATH)
 
 # Validate all inputs
 error=0
@@ -163,7 +163,7 @@ if [[ -n "$NETWORK_TIMEOUT" && "$NETWORK_TIMEOUT" != "null" ]]; then
 fi
 
 # Process custom apcupsd configuration with validation
-extra_keys=$(jq --raw-output ".custom_apcupsd_options[].key" $CONFIG_PATH)
+extra_keys=$(jq --raw-output ".advanced_options[].key" $CONFIG_PATH)
 if [[ -n "$extra_keys" ]]; then
     bashio::log.info "Processing custom apcupsd configuration options..."
     
@@ -183,7 +183,7 @@ if [[ -n "$extra_keys" ]]; then
             continue
         fi
         
-        val=$(jq --raw-output ".custom_apcupsd_options[] | select(.key == \"$key\").val" $CONFIG_PATH)
+        val=$(jq --raw-output ".advanced_options[] | select(.key == \"$key\").val" $CONFIG_PATH)
         
         if [[ -n "$val" ]]; then
             # Sanitize value and limit length

@@ -4,28 +4,26 @@ This add-on provides native apcupsd integration for monitoring APC UPS devices w
 
 ## Options
 
-### Basic UPS Configuration
+## Configuration Options
 
-- **UPS Name**: Display name for your UPS device (e.g., "Office UPS", "Server Room UPS")
-- **Connection Cable**: Type of cable used to connect to your UPS (dropdown selection)
-- **UPS Type**: Communication protocol for your UPS (dropdown selection)
-- **Device Path**: Specific device path or IP address (leave empty for automatic detection)
+### Basic Setup
+- **UPS Name**: Display name for your device
+- **Cable Type**: Connection method (USB, Smart, Simple, Ethernet, etc.)  
+- **UPS Protocol**: Communication type (USB, Network, APC Smart, etc.)
+- **Device**: Specific path or IP (leave empty for auto-detection)
 
-### Power Management Thresholds
+### Power Management  
+- **Battery Shutdown Level** (1-95%): When to shutdown (default: 5%)
+- **Minutes Before Shutdown** (1-60): Wait time on battery (default: 3)
+- **Max Runtime Seconds** (0-7200): Hard time limit (0 = disabled)
+- **Shutdown Delay** (0-300): Grace period before force-kill (default: 0)
 
-- **Shutdown Battery Percent** (1-95%): Battery level that triggers shutdown (default: 5%)
-- **Shutdown Minutes on Battery** (1-60): How long to wait on battery before shutdown (default: 3 minutes)
-- **Maximum Battery Runtime** (0-7200 seconds): Hard limit for battery operation (0 = disabled, default: 0)
-- **Graceful Shutdown Delay** (0-300 seconds): Grace period before forcing process termination (default: 0)
+### Network Settings
+- **Port** (1024-65535): Communication port (default: 3551)
+- **Timeout Seconds** (10-600): Network timeout (default: 60)
 
-### Network Communication Settings
-
-- **Daemon Port** (1024-65535): Port for apcupsd network communication (default: 3551)
-- **Network Timeout** (10-600 seconds): Timeout for network operations (default: 60)
-
-### Advanced Configuration (Expert Users)
-
-- **Custom APCUPSD Options**: Direct apcupsd configuration overrides for advanced users
+### Advanced Options
+- **Advanced Options**: Expert-level apcupsd configuration overrides
 
 ### Cable Types
 

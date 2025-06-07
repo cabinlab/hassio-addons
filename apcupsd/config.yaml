@@ -39,38 +39,31 @@ ports_description:
 
 # Add-on configuration options
 options:
-  # Basic UPS Configuration
   ups_name: "APC UPS"
-  connection_cable: "usb"
-  ups_type: "usb" 
-  device_path: ""
-  
-  # Power Management Thresholds
-  shutdown_battery_percent: 5
-  shutdown_minutes_on_battery: 3
-  maximum_battery_runtime_seconds: 0
-  graceful_shutdown_delay_seconds: 0
-  
-  # Network Communication Settings  
-  daemon_port: 3551
-  network_timeout_seconds: 60
-  
-  # Advanced Configuration (Expert Users)
-  custom_apcupsd_options: []
+  cable_type: "usb"
+  ups_protocol: "usb"
+  device: ""
+  battery_shutdown_level: 5
+  minutes_before_shutdown: 3
+  max_runtime_seconds: 0
+  shutdown_delay: 0
+  port: 3551
+  timeout_seconds: 60
+  advanced_options: []
 
-# Configuration schema with improved descriptions
+# Configuration schema
 schema:
   ups_name: "str?"
-  connection_cable: "list(usb|smart|simple|ether|940-0024C|940-0095A|940-0095B|940-0095C|940-1524C|940-0128A|MAM-04-02-2000)?"
-  ups_type: "list(usb|net|apcsmart|dumb|pcnet|snmp|test|modbus)?"
-  device_path: "str?"
-  shutdown_battery_percent: "int(1,95)?"
-  shutdown_minutes_on_battery: "int(1,60)?"
-  maximum_battery_runtime_seconds: "int(0,7200)?"
-  graceful_shutdown_delay_seconds: "int(0,300)?"
-  daemon_port: "int(1024,65535)?"
-  network_timeout_seconds: "int(10,600)?"
-  custom_apcupsd_options:
+  cable_type: "list(usb|smart|simple|ether|940-0024C|940-0095A|940-0095B|940-0095C|940-1524C|940-0128A|MAM-04-02-2000)?"
+  ups_protocol: "list(usb|net|apcsmart|dumb|pcnet|snmp|test|modbus)?"
+  device: "str?"
+  battery_shutdown_level: "int(1,95)?"
+  minutes_before_shutdown: "int(1,60)?"
+  max_runtime_seconds: "int(0,7200)?"
+  shutdown_delay: "int(0,300)?"
+  port: "int(1024,65535)?"
+  timeout_seconds: "int(10,600)?"
+  advanced_options:
     - key: str
       val: str
 
