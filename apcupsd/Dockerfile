@@ -24,9 +24,7 @@ COPY run.sh /
 COPY hassio_poweroff /sbin/poweroff
 COPY hassio_reboot /sbin/reboot
 
-RUN chmod +x /run.sh \
-    && chmod +x /sbin/poweroff \
-    && chmod +x /sbin/reboot
+RUN chmod +x /run.sh /sbin/poweroff /sbin/reboot
 
 WORKDIR /data
 
