@@ -204,6 +204,15 @@ bashio::log.info "=== DEBUG INFO ==="
 bashio::log.info "SUPERVISOR_TOKEN available: $([ -n "$SUPERVISOR_TOKEN" ] && echo "YES" || echo "NO")"
 bashio::log.info "Auto-discovery setting: $AUTO_DISCOVERY"
 
+# Debug USB devices
+bashio::log.info "=== USB DEBUGGING ==="
+bashio::log.info "USB devices available:"
+ls -la /dev/usb* 2>/dev/null || bashio::log.warning "No /dev/usb devices found"
+bashio::log.info "USB bus devices:"
+lsusb 2>/dev/null || bashio::log.warning "lsusb not available"
+bashio::log.info "APC-related USB devices:"
+lsusb 2>/dev/null | grep -i apc || bashio::log.warning "No APC USB devices detected"
+
 # Test apcupsd is working
 bashio::log.info "Testing apcupsd daemon..."
 sleep 3
@@ -212,7 +221,13 @@ if pgrep apcupsd > /dev/null; then
     # Test if apcaccess works
     if timeout 5 apcaccess status >/dev/null 2>&1; then
         bashio::log.info "✓ apcaccess can connect to daemon"
-        bashio::log.info "UPS Status: $(apcaccess status | grep STATUS | cut -d: -f2 | xargs)"
+        ups_status=$(apcaccess status | grep STATUS | cut -d: -f2 | xargs)
+        bashio::log.info "UPS Status: $ups_status"
+        
+        if [[ "$ups_status" == "COMMLOST" ]]; then
+            bashio::log.warning "UPS communication lost - checking apcupsd logs..."
+            tail -20 /var/log/messages 2>/dev/null || bashio::log.warning "No syslog available"
+        fi
     else
         bashio::log.warning "✗ apcaccess cannot connect to daemon"
     fi
