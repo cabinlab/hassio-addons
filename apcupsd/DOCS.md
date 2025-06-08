@@ -127,8 +127,9 @@ apcupsd:
 **For UI integration setup:**
 - Go to Settings > Devices & Services > Add Integration
 - Search for "APC UPS Daemon" 
-- Enter Host: `apcupsd` and Port: `3551`
-- The add-on slug name "apcupsd" is the correct hostname for internal network access
+- Enter Host: `12862deb-apcupsd` and Port: `3551`
+- The full add-on slug (including repository hash) is the correct hostname
+- Your hostname may be different - check the add-on details for the exact slug
 
 ### 2. Add Sensors
 

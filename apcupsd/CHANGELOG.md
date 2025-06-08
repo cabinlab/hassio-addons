@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.8] - 2025-01-07
+
+### Fixed
+- **Dynamic hostname detection**: Auto-discover the correct full add-on slug (e.g., "12862deb-apcupsd")
+- Query Supervisor API to get the actual add-on hostname with repository hash
+- Update both API config flow and configuration.yaml methods to use detected hostname
+- Improve error messages to show the correct hostname for manual setup
+- Documentation updated with example of full hostname format
+
 ## [2.0.7] - 2025-01-07
 
 ### Fixed

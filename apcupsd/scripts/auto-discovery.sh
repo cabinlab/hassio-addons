@@ -18,6 +18,36 @@ log_error() {
     bashio::log.error "$LOG_PREFIX $1"
 }
 
+# Get the correct add-on hostname from Supervisor
+get_addon_hostname() {
+    local addons_response addon_hostname
+    
+    log_info "Detecting add-on hostname..."
+    
+    # Get list of running add-ons from Supervisor
+    addons_response=$(curl -s -f \
+        -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
+        "http://supervisor/addons" 2>/dev/null || echo "error")
+    
+    if [[ "$addons_response" == "error" ]]; then
+        log_warning "Could not get add-ons list from Supervisor"
+        return 1
+    fi
+    
+    # Find our add-on (slug contains "apcupsd") and get its full slug
+    addon_hostname=$(echo "$addons_response" | jq -r '.data.addons[] | select(.slug | contains("apcupsd")) | .slug' | head -1)
+    
+    if [[ -n "$addon_hostname" && "$addon_hostname" != "null" ]]; then
+        log_info "Detected add-on hostname: $addon_hostname"
+        echo "$addon_hostname"
+        return 0
+    else
+        log_warning "Could not detect add-on hostname, falling back to 'apcupsd'"
+        echo "apcupsd"
+        return 1
+    fi
+}
+
 # Check if apcupsd integration is already configured
 check_existing_integration() {
     local response
@@ -47,9 +77,12 @@ check_existing_integration() {
 
 # Set up apcupsd integration via Supervisor API
 setup_apcupsd_integration() {
-    local flow_response config_response
+    local flow_response config_response addon_hostname
     
     log_info "Setting up APC UPS Daemon integration..."
+    
+    # Get the correct add-on hostname
+    addon_hostname=$(get_addon_hostname)
     
     # Step 1: Start config flow
     flow_response=$(curl -s -f \
@@ -78,18 +111,17 @@ setup_apcupsd_integration() {
     
     log_info "Config flow started with ID: $flow_id"
     
-    # Step 2: Configure with add-on slug name as hostname
-    # In Home Assistant OS, add-ons are accessible by their slug name on internal network
-    # The add-on slug is "apcupsd" so Home Assistant Core can reach it at "apcupsd:3551"
+    # Step 2: Configure with detected add-on hostname
+    log_info "Configuring integration with hostname: $addon_hostname"
     config_response=$(curl -s -f \
         -X POST \
         -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
         -H "Content-Type: application/json" \
         "http://supervisor/core/api/config/config_entries/flow/$flow_id" \
-        -d '{
-            "host": "apcupsd",
-            "port": 3551
-        }' 2>/dev/null || echo "error")
+        -d "{
+            \"host\": \"$addon_hostname\",
+            \"port\": 3551
+        }" 2>/dev/null || echo "error")
     
     if [[ "$config_response" == "error" ]]; then
         log_error "Failed to configure apcupsd integration"
@@ -104,9 +136,12 @@ setup_apcupsd_integration() {
 
 # Alternative: Add to configuration.yaml (recommended method)
 setup_yaml_integration() {
-    local config_file="/config/configuration.yaml"
+    local config_file="/config/configuration.yaml" addon_hostname
     
     log_info "Adding apcupsd configuration to configuration.yaml..."
+    
+    # Get the correct add-on hostname
+    addon_hostname=$(get_addon_hostname)
     
     # Check if configuration.yaml exists
     if [[ ! -f "$config_file" ]]; then
@@ -117,7 +152,7 @@ homeassistant:
 
 # APC UPS Daemon Integration (Auto-configured by add-on)
 apcupsd:
-  host: "apcupsd"
+  host: "$addon_hostname"
   port: 3551
 EOF
     else
@@ -132,7 +167,7 @@ EOF
 
 # APC UPS Daemon Integration (Auto-configured by add-on)
 apcupsd:
-  host: "apcupsd"
+  host: "$addon_hostname"
   port: 3551
 EOF
     fi
@@ -219,8 +254,11 @@ main() {
         return 0
     fi
     
+    local addon_hostname
+    addon_hostname=$(get_addon_hostname)
+    
     log_error "Auto-discovery failed - manual integration setup required"
-    send_notification "APC UPS Add-on is running on apcupsd:3551. Please manually add the APC UPS Daemon integration in Settings > Devices & Services."
+    send_notification "APC UPS Add-on is running on $addon_hostname:3551. Please manually add the APC UPS Daemon integration in Settings > Devices & Services using this hostname."
     
     return 1
 }
