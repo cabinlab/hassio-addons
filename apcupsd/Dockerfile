@@ -23,7 +23,8 @@ RUN ln -sf /usr/bin/msmtp /usr/sbin/sendmail
 COPY run.sh /
 COPY hassio_poweroff /etc/apcupsd/doshutdown
 COPY hassio_reboot /etc/apcupsd/doreboot
-RUN chmod +x /run.sh /etc/apcupsd/doshutdown /etc/apcupsd/doreboot
+COPY scripts/ /scripts/
+RUN chmod +x /run.sh /etc/apcupsd/doshutdown /etc/apcupsd/doreboot /scripts/*.sh
 
 WORKDIR /data
 

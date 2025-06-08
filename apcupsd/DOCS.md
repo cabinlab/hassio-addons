@@ -277,6 +277,68 @@ Monitor these log messages:
 - `Copied custom [event] script` - Script loaded
 - `ERROR: Failed to [action]` - Operation failed
 
+## UPS Power Control Services
+
+The add-on provides Home Assistant services for remote UPS power control:
+
+### Available Services
+
+**`apcupsd.ups_shutdown_return`**
+- Gracefully shuts down UPS with automatic restart when power returns
+- Parameters: `delay` (seconds, default: 20)
+- Use for: Planned maintenance, testing power restoration
+
+**`apcupsd.ups_load_off`**  
+- Cuts power to UPS outlets after delay
+- Parameters: `delay` (seconds, default: 10)
+- ⚠️ **WARNING**: Immediately shuts down connected equipment
+
+**`apcupsd.ups_load_on`**
+- Restores power to UPS outlets after delay  
+- Parameters: `delay` (seconds, default: 5)
+- Use for: Restoring power after controlled shutdown
+
+**`apcupsd.ups_reboot`**
+- Reboots UPS (shutdown then restart)
+- Parameters: `off_delay`, `on_delay` (seconds)
+- Use for: Power cycling connected equipment
+
+**`apcupsd.ups_emergency_kill`**
+- Immediately cuts all UPS power (no delay)
+- ⚠️ **DANGER**: Emergency use only - causes immediate power loss
+
+### Service Call Examples
+
+```yaml
+# Automation example - graceful shutdown during extended outage
+automation:
+  - alias: "UPS Extended Outage Shutdown"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.apc_ups_time_left
+        below: 300  # 5 minutes remaining
+    action:
+      - service: apcupsd.ups_shutdown_return
+        data:
+          delay: 60  # 1 minute warning
+
+# Manual power cycling via script
+script:
+  reboot_server_ups:
+    sequence:
+      - service: apcupsd.ups_reboot
+        data:
+          off_delay: 10   # Power off in 10 seconds
+          on_delay: 30    # Power on after 30 seconds
+```
+
+### Safety Notes
+
+- **Kill vs Shutdown**: `emergency_kill` cuts power immediately; other commands provide graceful coordination
+- **Service Dependencies**: Power control stops/restarts apcupsd daemon temporarily
+- **Recovery**: UPS automatically restarts monitoring after power control operations
+- **Validation**: All delays are validated (0-7200 seconds)
+
 ## Security Considerations
 
 - Scripts are validated for size and permissions
@@ -284,3 +346,4 @@ Monitor these log messages:
 - File access is restricted to `/share/apcupsd/`
 - API tokens are handled securely
 - Maximum limits prevent resource exhaustion
+- Power control commands require manager role permissions

@@ -182,10 +182,52 @@ if [[ -f "/share/apcupsd/aliases" ]]; then
     fi
 fi
 
+# Copy power control script
+cp /scripts/ups-power-control.sh /usr/local/bin/
+chmod +x /usr/local/bin/ups-power-control.sh
+
 # Start syslog daemon for logging
 bashio::log.info "Starting syslog daemon..."
 syslogd -n -O - &
 
 # Start apcupsd daemon
 bashio::log.info "Starting APC UPS daemon..."
-exec /sbin/apcupsd -b
+/sbin/apcupsd -b &
+
+# Monitor for Home Assistant service calls
+bashio::log.info "Starting UPS power control service monitor..."
+
+while true; do
+    # Check for service calls via Home Assistant API
+    if bashio::services.available "ups_shutdown_return"; then
+        delay=$(bashio::services.get "ups_shutdown_return" "delay" "20")
+        bashio::log.info "Received ups_shutdown_return service call with delay: $delay"
+        /usr/local/bin/ups-power-control.sh shutdown_return "$delay"
+    fi
+    
+    if bashio::services.available "ups_load_off"; then
+        delay=$(bashio::services.get "ups_load_off" "delay" "10")
+        bashio::log.info "Received ups_load_off service call with delay: $delay"
+        /usr/local/bin/ups-power-control.sh load_off "$delay"
+    fi
+    
+    if bashio::services.available "ups_load_on"; then
+        delay=$(bashio::services.get "ups_load_on" "delay" "5")
+        bashio::log.info "Received ups_load_on service call with delay: $delay"
+        /usr/local/bin/ups-power-control.sh load_on "$delay"
+    fi
+    
+    if bashio::services.available "ups_reboot"; then
+        off_delay=$(bashio::services.get "ups_reboot" "off_delay" "10")
+        on_delay=$(bashio::services.get "ups_reboot" "on_delay" "30")
+        bashio::log.info "Received ups_reboot service call"
+        /usr/local/bin/ups-power-control.sh reboot "$off_delay" "$on_delay"
+    fi
+    
+    if bashio::services.available "ups_emergency_kill"; then
+        bashio::log.warning "Received ups_emergency_kill service call"
+        /usr/local/bin/ups-power-control.sh emergency_kill
+    fi
+    
+    sleep 5
+done

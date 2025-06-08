@@ -1,6 +1,24 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.4] - 2025-01-07
+
+### Added (Experimental)
+- **UPS Power Control Services**: Remote power management via Home Assistant (testing)
+  - `ups_shutdown_return` - Graceful shutdown with auto-restart on power return
+  - `ups_load_off` - Cut power to outlets with configurable delay
+  - `ups_load_on` - Restore power to outlets with configurable delay  
+  - `ups_reboot` - Power cycle UPS with configurable off/on delays
+  - `ups_emergency_kill` - Immediate emergency power cut
+- Power control script with safety validation and logging
+- Service parameter validation (0-7200 second delays)
+- Comprehensive documentation with automation examples
+
+### Enhanced
+- Service monitoring loop for Home Assistant API integration
+- Improved logging with power control operation tracking
+- Safety warnings for destructive power operations
+
 ## [2.0.3] - 2025-01-07
 
 ### Enhanced
