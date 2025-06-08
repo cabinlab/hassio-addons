@@ -74,6 +74,7 @@ TYPE=$(jq --raw-output ".type" $CONFIG_PATH)
 DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
 BATTERY_LEVEL=$(jq --raw-output ".battery_level" $CONFIG_PATH)
 MINUTES_ON_BATTERY=$(jq --raw-output ".timeout_minutes" $CONFIG_PATH)
+AUTO_DISCOVERY=$(jq --raw-output ".auto_discovery" $CONFIG_PATH)
 
 # Validate all inputs
 error=0
@@ -182,9 +183,10 @@ if [[ -f "/share/apcupsd/aliases" ]]; then
     fi
 fi
 
-# Copy power control script
+# Copy scripts
 cp /scripts/ups-power-control.sh /usr/local/bin/
-chmod +x /usr/local/bin/ups-power-control.sh
+cp /scripts/auto-discovery.sh /usr/local/bin/
+chmod +x /usr/local/bin/ups-power-control.sh /usr/local/bin/auto-discovery.sh
 
 # Start syslog daemon for logging
 bashio::log.info "Starting syslog daemon..."
@@ -193,6 +195,17 @@ syslogd -n -O - &
 # Start apcupsd daemon
 bashio::log.info "Starting APC UPS daemon..."
 /sbin/apcupsd -b &
+
+# Wait for apcupsd to be ready
+sleep 5
+
+# Run auto-discovery if enabled
+if [[ "$AUTO_DISCOVERY" == "true" ]]; then
+    bashio::log.info "Starting auto-discovery for Home Assistant integration..."
+    /usr/local/bin/auto-discovery.sh &
+else
+    bashio::log.info "Auto-discovery disabled - skipping integration setup"
+fi
 
 # Monitor for Home Assistant service calls
 bashio::log.info "Starting UPS power control service monitor..."

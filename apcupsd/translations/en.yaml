@@ -23,4 +23,8 @@ configuration:
     name: "Max Battery Runtime [OPTIONAL]"
     description: "Shutdown after this many minutes on battery. Default: 5. Prevents deep discharge during extended outages."
 
+  auto_discovery:
+    name: "Auto-Configure Integration [OPTIONAL]"
+    description: "Automatically set up Home Assistant's native APC UPS Daemon integration. Connects to apcupsd:3551 for sensors and monitoring."
+
 network: {}

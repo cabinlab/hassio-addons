@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.6] - 2025-01-07
+
+### Added
+- **Auto-Discovery Integration**: Automatically sets up Home Assistant's native APC UPS Daemon integration
+  - Auto-configures integration via Supervisor API with host: "apcupsd", port: 3551
+  - Falls back to configuration.yaml method if API unavailable
+  - Sends notification when integration is configured
+  - New `auto_discovery` configuration option (default: enabled)
+- Integration health monitoring and conflict detection
+- Wait for Home Assistant readiness before attempting discovery
+
+### Enhanced
+- Seamless integration with Home Assistant's built-in apcupsd sensors
+- No manual integration setup required - works out of the box
+- Comprehensive logging for auto-discovery process
+
 ## [2.0.5] - 2025-01-07
 
 ### Fixed

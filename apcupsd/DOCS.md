@@ -103,7 +103,19 @@ extra:
 
 ## Home Assistant Integration
 
-### 1. Configure the Integration
+### Auto-Discovery (Recommended)
+
+The add-on automatically configures Home Assistant's native APC UPS Daemon integration when `auto_discovery` is enabled (default).
+
+**What it does:**
+- Detects existing apcupsd integration configuration
+- Automatically sets up integration via Supervisor API (host: "apcupsd", port: 3551)
+- Falls back to configuration.yaml method if needed
+- Sends notification when complete
+
+**No manual setup required!** The integration appears in Settings > Devices & Services automatically.
+
+### Manual Configuration (if auto-discovery disabled)
 
 Add to `configuration.yaml`:
 
