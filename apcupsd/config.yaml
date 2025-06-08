@@ -1,6 +1,6 @@
 name: "APC UPS Daemon"
 description: "Monitor APC UPS devices with native apcupsd integration"
-version: "2.0.8"
+version: "2.0.9"
 slug: "apcupsd"
 init: false
 
@@ -44,7 +44,7 @@ options:
   device: ""
   battery_level: 10
   timeout_minutes: 5
-  auto_discovery: true
+  auto_discovery: false
 
 schema:
   name: "str?"

@@ -199,12 +199,37 @@ bashio::log.info "Starting APC UPS daemon..."
 # Wait for apcupsd to be ready
 sleep 5
 
+# Debug environment
+bashio::log.info "=== DEBUG INFO ==="
+bashio::log.info "SUPERVISOR_TOKEN available: $([ -n "$SUPERVISOR_TOKEN" ] && echo "YES" || echo "NO")"
+bashio::log.info "Auto-discovery setting: $AUTO_DISCOVERY"
+
+# Test apcupsd is working
+bashio::log.info "Testing apcupsd daemon..."
+sleep 3
+if pgrep apcupsd > /dev/null; then
+    bashio::log.info "✓ apcupsd daemon is running"
+    # Test if apcaccess works
+    if timeout 5 apcaccess status >/dev/null 2>&1; then
+        bashio::log.info "✓ apcaccess can connect to daemon"
+        bashio::log.info "UPS Status: $(apcaccess status | grep STATUS | cut -d: -f2 | xargs)"
+    else
+        bashio::log.warning "✗ apcaccess cannot connect to daemon"
+    fi
+else
+    bashio::log.error "✗ apcupsd daemon is not running"
+fi
+
 # Run auto-discovery if enabled
 if [[ "$AUTO_DISCOVERY" == "true" ]]; then
     bashio::log.info "Starting auto-discovery for Home Assistant integration..."
     /usr/local/bin/auto-discovery.sh &
 else
-    bashio::log.info "Auto-discovery disabled - skipping integration setup"
+    bashio::log.info "Auto-discovery disabled - manual setup required"
+    bashio::log.info "Add to configuration.yaml:"
+    bashio::log.info "apcupsd:"
+    bashio::log.info "  host: \"12862deb-apcupsd\""
+    bashio::log.info "  port: 3551"
 fi
 
 # Monitor for Home Assistant service calls
