@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.7] - 2025-01-07
+
+### Fixed
+- Fix auto-discovery to use correct hostname "apcupsd" instead of "localhost"
+- Prioritize configuration.yaml method over API config flow (more reliable)
+- Update documentation to clarify manual integration setup with correct hostname
+- Improve auto-discovery notifications and error handling
+
 ## [2.0.6] - 2025-01-07
 
 ### Added

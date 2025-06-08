@@ -117,13 +117,18 @@ The add-on automatically configures Home Assistant's native APC UPS Daemon integ
 
 ### Manual Configuration (if auto-discovery disabled)
 
-Add to `configuration.yaml`:
-
+**For configuration.yaml method:**
 ```yaml
 apcupsd:
-  host: "apcupsd"  # Add-on hostname
+  host: "apcupsd"  # Add-on hostname on internal network
   port: 3551
 ```
+
+**For UI integration setup:**
+- Go to Settings > Devices & Services > Add Integration
+- Search for "APC UPS Daemon" 
+- Enter Host: `apcupsd` and Port: `3551`
+- The add-on slug name "apcupsd" is the correct hostname for internal network access
 
 ### 2. Add Sensors
 

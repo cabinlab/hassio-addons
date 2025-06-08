@@ -78,7 +78,9 @@ setup_apcupsd_integration() {
     
     log_info "Config flow started with ID: $flow_id"
     
-    # Step 2: Configure with add-on hostname and port
+    # Step 2: Configure with add-on slug name as hostname
+    # In Home Assistant OS, add-ons are accessible by their slug name on internal network
+    # The add-on slug is "apcupsd" so Home Assistant Core can reach it at "apcupsd:3551"
     config_response=$(curl -s -f \
         -X POST \
         -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
@@ -100,7 +102,7 @@ setup_apcupsd_integration() {
     return 0
 }
 
-# Alternative: Add to configuration.yaml if API method fails
+# Alternative: Add to configuration.yaml (recommended method)
 setup_yaml_integration() {
     local config_file="/config/configuration.yaml"
     
@@ -136,7 +138,13 @@ EOF
     fi
     
     log_info "apcupsd configuration added to configuration.yaml"
-    log_warning "Home Assistant restart required for configuration.yaml changes"
+    
+    # Try to reload core configuration to pick up changes
+    log_info "Attempting to reload Home Assistant configuration..."
+    curl -s -f \
+        -X POST \
+        -H "Authorization: Bearer $SUPERVISOR_TOKEN" \
+        "http://supervisor/core/api/services/homeassistant/reload_config_entry" >/dev/null 2>&1
     
     return 0
 }
@@ -196,18 +204,18 @@ main() {
         return 0
     fi
     
-    # Try to set up via API first
-    if setup_apcupsd_integration; then
-        send_notification "APC UPS Daemon integration automatically configured! Check Settings > Devices & Services."
-        log_info "Auto-discovery complete - integration configured via API"
+    # Use configuration.yaml method (more reliable)
+    if setup_yaml_integration; then
+        send_notification "APC UPS configuration added to configuration.yaml. The apcupsd sensors will be available after Home Assistant restart."
+        log_info "Auto-discovery complete - configuration added to YAML"
         return 0
     fi
     
-    # Fall back to configuration.yaml method
-    log_warning "API method failed, trying configuration.yaml method..."
-    if setup_yaml_integration; then
-        send_notification "APC UPS configuration added to configuration.yaml. Please restart Home Assistant to activate."
-        log_info "Auto-discovery complete - configuration added to YAML"
+    # Fall back to API method if YAML fails
+    log_warning "YAML method failed, trying API method..."
+    if setup_apcupsd_integration; then
+        send_notification "APC UPS Daemon integration automatically configured! Check Settings > Devices & Services."
+        log_info "Auto-discovery complete - integration configured via API"
         return 0
     fi
     
