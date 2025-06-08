@@ -1,6 +1,6 @@
 name: "APC UPS Daemon"
 description: "Monitor APC UPS devices with native apcupsd integration"
-version: "2.0.4"
+version: "2.0.5"
 slug: "apcupsd"
 init: false
 
@@ -22,14 +22,6 @@ boot: auto
 # Home Assistant API access for power control
 hassio_api: true
 hassio_role: manager
-
-# Services for UPS power control
-services:
-  - ups_shutdown_return
-  - ups_load_off
-  - ups_load_on  
-  - ups_reboot
-  - ups_emergency_kill
 
 # Volume mapping for scripts and configuration
 map:

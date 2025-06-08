@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.5] - 2025-01-07
+
+### Fixed
+- Remove invalid `services:` section from config.yaml that prevented add-on from appearing in store
+- Add-on should now be visible and installable again
+
 ## [2.0.4] - 2025-01-07
 
 ### Added (Experimental)
