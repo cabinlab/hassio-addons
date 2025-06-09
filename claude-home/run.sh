@@ -33,7 +33,7 @@ init_environment() {
         export DISABLE_ERROR_REPORTING=1
     fi
     
-    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-sonnet-20241022')
+    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-haiku-20241022')
     local theme=$(bashio::config 'theme' 'dark')
     bashio::log.info "Configuration: Model=$claude_model, Theme=$theme, Telemetry=$([ "$disable_telemetry" = "true" ] && echo "disabled" || echo "enabled")"
 }
@@ -43,7 +43,7 @@ create_claude_settings() {
     bashio::log.info "Creating Claude native settings configuration..."
     
     # Read configuration from Home Assistant
-    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-sonnet-20241022')
+    local claude_model=$(bashio::config 'claude_model' 'claude-3-5-haiku-20241022')
     local theme=$(bashio::config 'theme' 'dark')
     local verbose_logging=$(bashio::config 'verbose_logging' 'false')
     local max_turns=$(bashio::config 'max_turns' '10')
@@ -67,7 +67,9 @@ create_claude_settings() {
     # Create Claude settings.json with native configuration format
     cat > /config/claude-config/settings.json << EOF
 {
-  "model": "$claude_model",
+  "env": {
+    "ANTHROPIC_MODEL": "$claude_model"
+  },
   "theme": "$theme",
   "verbose": $verbose_json,
   "maxTurns": $max_turns,
@@ -536,9 +538,11 @@ start_web_terminal() {
         bashio::log.info "Claude settings.json created successfully"
     fi
 
-    # Export functions for terminal session
-    cat >> /root/.bashrc << 'EOF'
+    # Create functions script for terminal session
+    cat > /tmp/claude_functions.sh << 'EOF'
+#!/bin/bash
 # Claude Home functions
+
 check_claude_auth() {
     if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
        [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
@@ -553,7 +557,7 @@ check_claude_auth() {
 }
 
 show_terminal_header() {
-    local auto_claude=$(bashio::config 'auto_claude' 'false')
+    local auto_claude_setting=$(jq -r '.auto_claude // false' /data/options.json)
     local CYAN='\033[38;2;79;195;193m'
     local BRIGHT_ORANGE='\033[1;38;2;244;132;95m'
     local GREEN='\033[0;32m'
@@ -580,7 +584,7 @@ show_terminal_header() {
         "authenticated")
             echo -e "${GREEN}***** Authenticated *****${RESET}"
             echo ""
-            if [ "$auto_claude" = "true" ]; then
+            if [ "$auto_claude_setting" = "true" ]; then
                 echo "Auto-starting Claude..."
                 sleep 1
                 exec claude
@@ -597,12 +601,13 @@ show_terminal_header() {
     echo ""
 }
 EOF
+    chmod +x /tmp/claude_functions.sh
 
     exec ttyd \
         --port "${port}" \
         --interface 0.0.0.0 \
         --writable \
-        bash -c "check_claude_auth && show_terminal_header && bash"
+        bash -c "source /tmp/claude_functions.sh && check_claude_auth && show_terminal_header && bash"
 }
 
 # Main execution
