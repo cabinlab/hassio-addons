@@ -1,7 +1,7 @@
 configuration:
   claude_model:
     name: "🤖 Claude Model [IMPORTANT - COST IMPACT]"
-    description: "Select the Claude AI model. Pricing varies dramatically - choose carefully to manage token costs."
+    description: "✅ Haiku - RECOMMENDED for HA • 🟡 Sonnet: 4x cost • 🔴 Default/Opus: up to 19x cost"
     options:
       claude-3-5-haiku-20241022: "✅ Haiku (RECOMMENDED) - 5x cheaper than Sonnet, perfect for HA tasks"
       sonnet: "⚡ Sonnet - Balanced performance (baseline cost)"
