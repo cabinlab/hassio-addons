@@ -17,6 +17,10 @@ configuration:
       light-daltonized: "🔆 Light (Colorblind Friendly) - Enhanced contrast for accessibility"
       dark-daltonized: "🌙 Dark (Colorblind Friendly) - Dark theme with accessibility enhancements"
 
+  auto_claude:
+    name: "🚀 Auto-Start Claude"
+    description: "Automatically start Claude CLI on terminal load. When disabled, you get a bash terminal and can run 'claude' manually with flags."
+
   verbose_logging:
     name: "📝 Verbose Logging"
     description: "Enable detailed logging for debugging. Keep disabled unless troubleshooting issues."

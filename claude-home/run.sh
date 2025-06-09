@@ -411,8 +411,8 @@ EOF
     fi
 }
 
-# Create simplified Claude startup script using native settings
-create_claude_startup() {
+# Setup credential management and Claude wrapper
+setup_claude_wrapper() {
     # Backup original claude command and create wrapper
     if [ -f "/usr/local/bin/claude" ]; then
         mv /usr/local/bin/claude /usr/local/bin/claude-original
@@ -436,46 +436,88 @@ exec node "$CLAUDE_BIN" "$@"
 EOF
 
     chmod +x /usr/local/bin/claude
+}
 
-    cat > /tmp/start_claude.sh << 'EOF'
+# Check Claude authentication status
+check_claude_auth() {
+    # Check for credential files in persistent and runtime locations
+    if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
+       [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
+        # Try a quick validation by checking if claude can run without auth prompts
+        if timeout 3 claude --version >/dev/null 2>&1; then
+            export CLAUDE_AUTH_STATUS="authenticated"
+        else
+            export CLAUDE_AUTH_STATUS="invalid"
+        fi
+    else
+        export CLAUDE_AUTH_STATUS="missing"
+    fi
+}
+
+# Display ASCII header and auth status
+show_terminal_header() {
+    local auto_claude=$(bashio::config 'auto_claude' 'false')
+    
+    # Colors from reference script
+    local CYAN='\033[38;2;79;195;193m'
+    local BRIGHT_ORANGE='\033[1;38;2;244;132;95m'
+    local GREEN='\033[0;32m'
+    local RESET='\033[0m'
+    
+    # ASCII Header in cyan
+    echo -e "${CYAN}"
+    echo "  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗"
+    echo " ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝"
+    echo " ██║     ██║     ███████║██║   ██║██║  ██║█████╗  "
+    echo " ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  "
+    echo " ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗"
+    echo "  ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
+    echo ""
+    echo "                    ██╗  ██╗ ██████╗ ███╗   ███╗███████╗"
+    echo "                    ██║  ██║██╔═══██╗████╗ ████║██╔════╝"
+    echo "                    ███████║██║   ██║██╔████╔██║█████╗  "
+    echo "                    ██╔══██║██║   ██║██║╚██╔╝██║██╔══╝  "
+    echo "                    ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗"
+    echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝"
+    echo -e "${RESET}"
+    echo ""
+    
+    # Auth status
+    case "$CLAUDE_AUTH_STATUS" in
+        "authenticated")
+            echo -e "${GREEN}***** Authenticated *****${RESET}"
+            echo ""
+            if [ "$auto_claude" = "true" ]; then
+                echo "Auto-starting Claude..."
+                sleep 1
+                exec claude
+            else
+                echo "Run 'claude' to start, or 'claude --help' for options"
+            fi
+            ;;
+        *)
+            echo -e "${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
+            echo ""
+            echo "Run 'claude auth' to authenticate"
+            ;;
+    esac
+    echo ""
+}
+
+# Create terminal startup script
+create_terminal_startup() {
+    cat > /tmp/start_terminal.sh << 'EOF'
 #!/bin/bash
 
-echo "Checking Claude CLI installation..."
+# Clear screen and show header
+clear
+show_terminal_header
 
-# Check if node and claude wrapper exist
-if ! command -v node >/dev/null 2>&1; then
-    echo "ERROR: Node.js not found in PATH"
-    echo "Starting bash shell instead..."
-    exec bash
-fi
-
-if [ ! -f "/usr/local/bin/claude" ]; then
-    echo "ERROR: Claude wrapper not created"
-    echo "Starting bash shell instead..."
-    exec bash
-fi
-
-echo "Claude CLI wrapper created successfully"
-echo "Starting Claude with native settings.json configuration..."
-
-# Check if we have authentication
-if [ ! -f "/config/claude-config/.claude" ] && [ ! -f "/config/claude-config/.claude.json" ] && [ ! -f "/root/.claude" ] && [ ! -f "/root/.claude.json" ]; then
-    echo "No Claude authentication found. You'll need to authenticate first."
-    echo "Run 'claude auth' to authenticate."
-    echo ""
-    echo "Starting bash shell for authentication..."
-    exec bash
-fi
-
-# Start Claude with better error handling
-claude 2>&1 || {
-    echo "Claude failed to start (exit code: $?)"
-    echo "Starting bash shell instead..."
-    exec bash
-}
+# Start bash shell
+exec bash
 EOF
 
-    chmod +x /tmp/start_claude.sh
+    chmod +x /tmp/start_terminal.sh
 }
 
 # Start main web terminal
@@ -494,21 +536,73 @@ start_web_terminal() {
         bashio::log.info "Claude settings.json created successfully"
     fi
 
-    # Run ttyd with context integration info
-    local context_integration=$(bashio::config 'context_integration' 'true')
-    local startup_command="clear && echo 'Welcome to Claude Home!' && echo '' && echo 'Configuration loaded from settings.json'"
-    
-    if [ "$context_integration" = "true" ] && [ -f "/tmp/ha_context_welcome.txt" ]; then
-        startup_command="$startup_command && echo '' && cat /tmp/ha_context_welcome.txt"
+    # Export functions for terminal session
+    cat >> /root/.bashrc << 'EOF'
+# Claude Home functions
+check_claude_auth() {
+    if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
+       [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
+        if timeout 3 claude --version >/dev/null 2>&1; then
+            export CLAUDE_AUTH_STATUS="authenticated"
+        else
+            export CLAUDE_AUTH_STATUS="invalid"
+        fi
+    else
+        export CLAUDE_AUTH_STATUS="missing"
     fi
+}
+
+show_terminal_header() {
+    local auto_claude=$(bashio::config 'auto_claude' 'false')
+    local CYAN='\033[38;2;79;195;193m'
+    local BRIGHT_ORANGE='\033[1;38;2;244;132;95m'
+    local GREEN='\033[0;32m'
+    local RESET='\033[0m'
     
-    startup_command="$startup_command && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && /tmp/start_claude.sh"
+    echo -e "${CYAN}"
+    echo "  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗"
+    echo " ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝"
+    echo " ██║     ██║     ███████║██║   ██║██║  ██║█████╗  "
+    echo " ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  "
+    echo " ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗"
+    echo "  ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
+    echo ""
+    echo "                    ██╗  ██╗ ██████╗ ███╗   ███╗███████╗"
+    echo "                    ██║  ██║██╔═══██╗████╗ ████║██╔════╝"
+    echo "                    ███████║██║   ██║██╔████╔██║█████╗  "
+    echo "                    ██╔══██║██║   ██║██║╚██╔╝██║██╔══╝  "
+    echo "                    ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗"
+    echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝"
+    echo -e "${RESET}"
+    echo ""
     
+    case "$CLAUDE_AUTH_STATUS" in
+        "authenticated")
+            echo -e "${GREEN}***** Authenticated *****${RESET}"
+            echo ""
+            if [ "$auto_claude" = "true" ]; then
+                echo "Auto-starting Claude..."
+                sleep 1
+                exec claude
+            else
+                echo "Run 'claude' to start, or 'claude --help' for options"
+            fi
+            ;;
+        *)
+            echo -e "${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
+            echo ""
+            echo "Run 'claude auth' to authenticate"
+            ;;
+    esac
+    echo ""
+}
+EOF
+
     exec ttyd \
         --port "${port}" \
         --interface 0.0.0.0 \
         --writable \
-        bash -c "$startup_command"
+        bash -c "check_claude_auth && show_terminal_header && bash"
 }
 
 # Main execution
@@ -523,7 +617,8 @@ main() {
     setup_filesystem_security
     start_activity_monitoring
     verify_security_integration
-    create_claude_startup
+    setup_claude_wrapper
+    check_claude_auth
     start_credential_service
     setup_context_integration
     start_web_terminal
