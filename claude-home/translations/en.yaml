@@ -11,6 +11,11 @@ configuration:
   theme:
     name: "🎨 Terminal Theme"
     description: "Choose the visual appearance of your terminal interface."
+    options:
+      dark: "🌙 Dark - Easy on the eyes in low light"
+      light: "☀️ Light - Classic bright terminal"
+      system: "🖥️ System - Match your device theme"
+      high-contrast: "🔍 High Contrast - Enhanced visibility"
 
   auto_claude:
     name: "🚀 Auto-Start Claude"
