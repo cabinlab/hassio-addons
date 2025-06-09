@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.14] - 2025-01-08
+
+### Enhanced
+- **Proactive Device Testing**: Enhanced auto-detection logic to test both hiddev0 and hiddev1 during initial setup
+- **Smart Device Selection**: For apcsmart protocol, test device compatibility using apctest before daemon startup
+- **Improved Fallback Logic**: Better device preference handling with accessibility testing
+- **Enhanced Debugging**: More detailed logging for device selection and compatibility testing
+- **Reduced COMMLOST Issues**: Proactive device testing reduces communication failures
+
+### Technical Improvements
+- Replaced simple device existence check with actual compatibility testing
+- Added apctest integration for device validation before daemon startup
+- Enhanced device auto-detection with preference-based testing
+- Improved error handling and fallback mechanisms for device selection
+
 ## [2.0.8] - 2025-01-07
 
 ### Fixed

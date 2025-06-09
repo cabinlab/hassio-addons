@@ -124,22 +124,72 @@ if [[ -n "$DEVICE" ]]; then
     sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE $sanitized_device/g" $UPS_CONFIG_PATH
     bashio::log.info "Device set to: $DEVICE"
 else
-    # Try to set a specific device for UPS
-    if [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev0" ]]; then
-        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
-        bashio::log.info "Device set to: /dev/usb/hiddev0 (auto-detected HID device)"
-    elif [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev1" ]]; then
-        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
-        bashio::log.info "Device set to: /dev/usb/hiddev1 (auto-detected HID device)"
-    elif [[ "$TYPE" == "apcsmart" && -e "/dev/usb/hiddev0" ]]; then
-        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
-        bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID)"
-    elif [[ "$TYPE" == "apcsmart" && -e "/dev/usb/hiddev1" ]]; then
-        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
-        bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID)"
-    else
+    # Enhanced device auto-detection with preference testing
+    device_set=false
+    
+    if [[ "$TYPE" == "usb" ]]; then
+        # For USB type, prefer hiddev0 then hiddev1
+        if [[ -e "/dev/usb/hiddev0" ]]; then
+            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+            bashio::log.info "Device set to: /dev/usb/hiddev0 (auto-detected HID device)"
+            device_set=true
+        elif [[ -e "/dev/usb/hiddev1" ]]; then
+            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+            bashio::log.info "Device set to: /dev/usb/hiddev1 (auto-detected HID device)"
+            device_set=true
+        fi
+    elif [[ "$TYPE" == "apcsmart" ]]; then
+        # For apcsmart, test both devices and use the one that works
+        bashio::log.info "Testing apcsmart device compatibility..."
+        
+        # Test hiddev0 first
+        if [[ -e "/dev/usb/hiddev0" ]]; then
+            bashio::log.info "Testing /dev/usb/hiddev0 for apcsmart compatibility..."
+            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+            
+            # Quick test with apctest if available
+            if command -v apctest &> /dev/null; then
+                # Test device access (this doesn't start the daemon)
+                if timeout 3 bash -c "echo '1' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -q 'View' || true"; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - tested)"
+                    device_set=true
+                else
+                    bashio::log.info "hiddev0 test failed, trying hiddev1..."
+                fi
+            else
+                # Fallback to basic file access test
+                if [[ -r "/dev/usb/hiddev0" && -w "/dev/usb/hiddev0" ]]; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - accessible)"
+                    device_set=true
+                fi
+            fi
+        fi
+        
+        # Test hiddev1 if hiddev0 failed or doesn't exist
+        if [[ "$device_set" == "false" && -e "/dev/usb/hiddev1" ]]; then
+            bashio::log.info "Testing /dev/usb/hiddev1 for apcsmart compatibility..."
+            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+            
+            if command -v apctest &> /dev/null; then
+                if timeout 3 bash -c "echo '1' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -q 'View' || true"; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - tested)"
+                    device_set=true
+                else
+                    bashio::log.warning "Both hiddev0 and hiddev1 failed apctest - using hiddev1 as fallback"
+                fi
+            else
+                if [[ -r "/dev/usb/hiddev1" && -w "/dev/usb/hiddev1" ]]; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - accessible)"
+                    device_set=true
+                fi
+            fi
+        fi
+    fi
+    
+    # Fallback if no device was set
+    if [[ "$device_set" == "false" ]]; then
         sed -i "s/^#\?DEVICE\( .*\)\?\$//g" $UPS_CONFIG_PATH
-        bashio::log.info "Device auto-detection enabled (no specific device found)"
+        bashio::log.info "Device auto-detection enabled (no specific device found or tested)"
     fi
 fi
 
@@ -253,12 +303,30 @@ if pgrep apcupsd > /dev/null; then
             bashio::log.info "Full apcaccess output:"
             apcaccess status 2>&1 | head -10 || bashio::log.warning "Cannot get apcaccess status"
             
-            # Try alternative configuration for smart UPS
-            if [[ "$CABLE" == "usb" && "$TYPE" == "usb" ]]; then
-                bashio::log.info "Trying smart cable configuration as fallback..."
-                bashio::log.info "SUGGESTION: Try changing Cable Type to 'smart' and Communication Protocol to 'apcsmart' in add-on config"
-                bashio::log.info "Some APC UPS devices need smart cable configuration even when connected via USB"
+            # Try alternative device for apcsmart
+            if [[ "$CABLE" == "smart" && "$TYPE" == "apcsmart" ]]; then
+                current_device=$(grep "^DEVICE" /etc/apcupsd/apcupsd.conf | cut -d' ' -f2)
+                if [[ "$current_device" == "/dev/usb/hiddev0" && -e "/dev/usb/hiddev1" ]]; then
+                    bashio::log.info "Trying alternative device /dev/usb/hiddev1..."
+                    sed -i "s/^DEVICE.*/DEVICE \/dev\/usb\/hiddev1/g" /etc/apcupsd/apcupsd.conf
+                    bashio::log.info "Restarting apcupsd with hiddev1..."
+                    pkill apcupsd
+                    sleep 2
+                    /sbin/apcupsd -b &
+                    sleep 3
+                    new_status=$(apcaccess status | grep STATUS | cut -d: -f2 | xargs)
+                    bashio::log.info "UPS Status with hiddev1: $new_status"
+                elif [[ "$current_device" == "/dev/usb/hiddev1" ]]; then
+                    bashio::log.info "Already tried hiddev1, UPS may not be compatible with current settings"
+                fi
             fi
+            
+            # Suggest manual device configuration
+            bashio::log.info "TROUBLESHOOTING: Try manually setting Device Path in add-on config:"
+            bashio::log.info "- Try: /dev/usb/hiddev0"
+            bashio::log.info "- Try: /dev/usb/hiddev1" 
+            bashio::log.info "- Try: /dev/ttyUSB0 (if available)"
+            bashio::log.info "- Or try Cable Type 'usb' with Communication Protocol 'usb'"
         fi
     else
         bashio::log.warning "✗ apcaccess cannot connect to daemon"
