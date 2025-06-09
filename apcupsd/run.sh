@@ -283,10 +283,46 @@ syslogd -n -O - &
 
 # Start apcupsd daemon
 bashio::log.info "Starting APC UPS daemon..."
-/sbin/apcupsd -b &
 
-# Wait for apcupsd to be ready
-sleep 5
+# Test one more time before starting daemon to ensure config is correct
+bashio::log.info "Final configuration verification before daemon startup:"
+grep -E "^(UPSCABLE|UPSTYPE|DEVICE)" $UPS_CONFIG_PATH | while read line; do
+    bashio::log.info "  $line"
+done
+
+# Test device permissions and access before starting daemon
+if [[ -n $(grep "^DEVICE" $UPS_CONFIG_PATH | cut -d' ' -f2) ]]; then
+    device_path=$(grep "^DEVICE" $UPS_CONFIG_PATH | cut -d' ' -f2)
+    if [[ -e "$device_path" ]]; then
+        bashio::log.info "Device $device_path exists with permissions: $(ls -la $device_path)"
+        if [[ -r "$device_path" && -w "$device_path" ]]; then
+            bashio::log.info "✓ Device $device_path is readable and writable"
+        else
+            bashio::log.warning "✗ Device $device_path permissions issue"
+        fi
+    else
+        bashio::log.warning "✗ Device $device_path does not exist"
+    fi
+fi
+
+# Start daemon with additional debugging
+bashio::log.info "Starting apcupsd daemon in debug mode..."
+/sbin/apcupsd -b -d 10 &
+daemon_pid=$!
+
+# Wait for daemon initialization
+bashio::log.info "Waiting for apcupsd daemon to initialize (PID: $daemon_pid)..."
+sleep 3
+
+# Check if daemon is still running
+if kill -0 $daemon_pid 2>/dev/null; then
+    bashio::log.info "✓ apcupsd daemon is running (PID: $daemon_pid)"
+else
+    bashio::log.error "✗ apcupsd daemon failed to start or crashed"
+fi
+
+# Additional wait for stabilization
+sleep 2
 
 # Debug environment
 bashio::log.info "=== DEBUG INFO ==="
@@ -308,7 +344,28 @@ ls -la /dev/bus/usb/*/*051d* 2>/dev/null || bashio::log.warning "Cannot find APC
 
 # Test apcupsd is working
 bashio::log.info "Testing apcupsd daemon..."
+
+# Immediate status check
+bashio::log.info "Immediate daemon status check..."
+if pgrep apcupsd > /dev/null; then
+    bashio::log.info "✓ apcupsd daemon process found"
+    
+    # Try immediate apcaccess test
+    bashio::log.info "Testing immediate apcaccess connection..."
+    if timeout 3 apcaccess status >/dev/null 2>&1; then
+        immediate_status=$(apcaccess status | grep STATUS | cut -d: -f2 | xargs)
+        bashio::log.info "Immediate UPS Status: $immediate_status"
+    else
+        bashio::log.warning "✗ Immediate apcaccess test failed"
+    fi
+else
+    bashio::log.error "✗ apcupsd daemon process not found immediately after startup"
+fi
+
+# Wait a bit more for stabilization
 sleep 3
+
+bashio::log.info "Post-stabilization daemon status check..."
 if pgrep apcupsd > /dev/null; then
     bashio::log.info "✓ apcupsd daemon is running"
     # Test if apcaccess works

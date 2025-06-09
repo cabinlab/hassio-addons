@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.16] - 2025-01-08
+
+### Enhanced Debugging
+- **Daemon Initialization Monitoring**: Added detailed monitoring of apcupsd daemon startup process
+- **Configuration Verification**: Final configuration check before daemon startup with device permissions
+- **Debug Mode Startup**: Start apcupsd with debug level 10 for enhanced logging
+- **Immediate Status Testing**: Test UPS communication immediately after daemon startup
+- **Process Monitoring**: Track daemon PID and verify it stays running during initialization
+- **Enhanced Error Detection**: Better detection of daemon startup failures and crashes
+
+### Technical Improvements
+- Added pre-startup device permission verification and logging
+- Enhanced daemon startup sequence with debug mode and process monitoring
+- Immediate post-startup communication testing to identify timing issues
+- Better error detection for daemon initialization failures
+
 ## [2.0.15] - 2025-01-08
 
 ### Enhanced
