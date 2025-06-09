@@ -30,8 +30,17 @@ RUN ARCH="$(dpkg --print-architecture)" && \
 # Install Claude Code globally - it just works on Debian!
 RUN npm install -g @anthropic-ai/claude-code
 
-# Copy run script
+# Copy run scripts and make them executable
 COPY run.sh /
+COPY run-simple.sh /
+RUN chmod a+x /run.sh /run-simple.sh
+
+# S6 expects the service in a specific location for legacy mode
+# Use the simple script for now
+RUN mkdir -p /etc/services.d/claude-home && \
+    echo '#!/usr/bin/with-contenv bashio' > /etc/services.d/claude-home/run && \
+    echo 'exec /run-simple.sh' >> /etc/services.d/claude-home/run && \
+    chmod +x /etc/services.d/claude-home/run
 
 # Labels
 LABEL \
