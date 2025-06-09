@@ -413,6 +413,11 @@ EOF
 
 # Create simplified Claude startup script using native settings
 create_claude_startup() {
+    # Backup original claude command and create wrapper
+    if [ -f "/usr/local/bin/claude" ]; then
+        mv /usr/local/bin/claude /usr/local/bin/claude-original
+    fi
+    
     # Create a Node.js wrapper for Claude CLI to bypass BusyBox env issues
     cat > /usr/local/bin/claude << 'EOF'
 #!/bin/bash
