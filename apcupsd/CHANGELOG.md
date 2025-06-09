@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2025-01-08
+
+### 🔧 Quick Fix: Enable Auto-Discovery by Default
+- **Auto-Discovery Enabled**: Set `auto_discovery: true` as default since integration is working
+- **Removes Manual Setup**: No longer requires manual configuration of apcupsd integration
+- **Better User Experience**: Integration sets up automatically on first run
+
+### Note for Existing Users
+If you see "Auto-discovery disabled - manual setup required", either:
+1. Enable auto-discovery in the add-on configuration, OR
+2. Manually add the integration: Settings → Devices & Services → Add Integration → "APC UPS Daemon" with host `12862deb-apcupsd` and port `3551`
+
 ## [2.1.0] - 2025-01-08
 
 ### 🎨 MAJOR UX IMPROVEMENT: Simplified Connection Configuration
