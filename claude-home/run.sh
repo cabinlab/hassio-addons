@@ -480,9 +480,22 @@ EOF
 setup_clean_credentials() {
     # Remove any stale credential files that might be causing issues
     bashio::log.info "Cleaning up potentially stale credential files..."
-    rm -f /config/claude-config/.claude*
-    rm -f /root/.claude*
+    
+    # Preserve settings.json if it exists
+    if [ -f "/root/.claude/settings.json" ]; then
+        cp /root/.claude/settings.json /tmp/claude-settings-backup.json
+    fi
+    
+    rm -rf /config/claude-config/.claude*
+    rm -rf /root/.claude*
     rm -rf /root/.config/anthropic
+    
+    # Restore settings.json if we backed it up
+    if [ -f "/tmp/claude-settings-backup.json" ]; then
+        mkdir -p /root/.claude
+        mv /tmp/claude-settings-backup.json /root/.claude/settings.json
+        bashio::log.info "Preserved Claude settings.json"
+    fi
     
     # Restore original Claude CLI if we backed it up
     if [ -f "/usr/local/bin/claude-original" ]; then
