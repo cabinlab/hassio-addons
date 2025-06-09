@@ -8,8 +8,22 @@ bashio::log.info "Claude Home starting..."
 mkdir -p /root/.claude
 mkdir -p /config/claude-config
 
-# Get model from config
-CLAUDE_MODEL=$(bashio::config 'claude_model' 'claude-3-5-haiku-20241022')
+# Get model from config and map to actual model ID
+MODEL_CHOICE=$(bashio::config 'claude_model' 'Haiku - RECOMMENDED for Home Assistant')
+case "$MODEL_CHOICE" in
+    "Haiku - RECOMMENDED for Home Assistant")
+        CLAUDE_MODEL="claude-3-5-haiku-20241022"
+        ;;
+    "Sonnet - More powerful and 4x cost")
+        CLAUDE_MODEL="sonnet"
+        ;;
+    "Opus - Most powerful and up to 19x cost")
+        CLAUDE_MODEL="default"
+        ;;
+    *)
+        CLAUDE_MODEL="claude-3-5-haiku-20241022"
+        ;;
+esac
 export ANTHROPIC_MODEL="$CLAUDE_MODEL"
 
 # Create settings.json in correct location
