@@ -1,7 +1,7 @@
 configuration:
   claude_model:
     name: "Claude Model [IMPORTANT - COST IMPACT]"
-    description: "Choose the AI model based on your needs and budget"
+    description: "Haiku strongly RECOMMENDED for Home Assistant. ⚠️ Sonnet cost is 4x. Default/Opus up to 19x cost"
     options:
       claude-3-5-haiku-20241022: "Haiku - RECOMMENDED for Home Assistant"
       sonnet: "Sonnet - More powerful and 4x cost"

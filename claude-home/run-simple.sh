@@ -35,15 +35,22 @@ EOF
 
 bashio::log.info "Model set to: $CLAUDE_MODEL"
 
+# Get auto-start preference
+AUTO_CLAUDE=$(bashio::config 'auto_claude' 'false')
+bashio::log.info "Auto-start Claude: $AUTO_CLAUDE"
+
 # Create startup script with ASCII header
-cat > /tmp/startup.sh << 'EOF'
+cat > /tmp/startup.sh << EOF
 #!/bin/bash
 
+# Auto-start Claude setting
+AUTO_CLAUDE="$AUTO_CLAUDE"
+
 # Colors
-CYAN='\033[38;2;79;195;193m'
-BRIGHT_ORANGE='\033[1;38;2;244;132;95m'
-GREEN='\033[0;32m'
-RESET='\033[0m'
+CYAN='\\033[38;2;79;195;193m'
+BRIGHT_ORANGE='\\033[1;38;2;244;132;95m'
+GREEN='\\033[0;32m'
+RESET='\\033[0m'
 
 clear
 
@@ -81,7 +88,14 @@ echo ""
 echo "             Model: ${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
 echo ""
 
-exec bash
+# Check if auto-start is enabled
+if [ "\$AUTO_CLAUDE" = "true" ]; then
+    echo "             Auto-starting Claude CLI..."
+    echo ""
+    exec claude
+else
+    exec bash
+fi
 EOF
 
 chmod +x /tmp/startup.sh
