@@ -1,6 +1,6 @@
 name: "APC UPS Daemon"
 description: "Monitor APC UPS devices with native apcupsd integration"
-version: "2.0.19"
+version: "2.0.20"
 slug: "apcupsd"
 init: false
 
@@ -30,6 +30,9 @@ map:
 # USB device access for UPS communication
 devices:
   - "/dev/usb/:/dev/usb/:rwm"
+
+# Full hardware access for USB device write access (like original working version)
+full_access: true
 
 # Network port for apcupsd daemon
 ports:

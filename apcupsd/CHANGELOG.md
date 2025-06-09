@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.20] - 2025-01-08
+
+### 🔧 CRITICAL FIX: Full Hardware Access for USB Devices
+- **Add full_access: true**: Enable full hardware access like original working version
+- **Resolve Read-Only Filesystem**: Fix "Read-only file system" errors preventing device access
+- **Match Original Configuration**: Restore the hardware privileges that made the pre-fork version work
+- **USB Device Write Access**: Allow daemon to properly communicate with UPS hardware
+- **Container Privilege Fix**: Remove restrictive container security that blocked USB communication
+
+### Root Cause Resolution
+Based on user feedback that this UPS worked with the pre-fork version 3+ years ago, the issue was missing **full_access: true** in the container configuration. The original working version had broader hardware access that our modernized security-focused version lacked.
+
+**This should restore the working functionality from the original apcupsd add-on!**
+
 ## [2.0.19] - 2025-01-08
 
 ### 🔧 PERMISSIONS FIX: Device Access Rights
