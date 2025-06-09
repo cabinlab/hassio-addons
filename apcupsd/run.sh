@@ -124,8 +124,17 @@ if [[ -n "$DEVICE" ]]; then
     sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE $sanitized_device/g" $UPS_CONFIG_PATH
     bashio::log.info "Device set to: $DEVICE"
 else
-    sed -i "s/^#\?DEVICE\( .*\)\?\$//g" $UPS_CONFIG_PATH
-    bashio::log.info "Device auto-detection enabled"
+    # Try to set a specific HID device for USB UPS
+    if [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev0" ]]; then
+        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+        bashio::log.info "Device set to: /dev/usb/hiddev0 (auto-detected HID device)"
+    elif [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev1" ]]; then
+        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+        bashio::log.info "Device set to: /dev/usb/hiddev1 (auto-detected HID device)"
+    else
+        sed -i "s/^#\?DEVICE\( .*\)\?\$//g" $UPS_CONFIG_PATH
+        bashio::log.info "Device auto-detection enabled (no specific HID device found)"
+    fi
 fi
 
 # Configure apcupsd settings
@@ -210,8 +219,12 @@ bashio::log.info "USB devices available:"
 ls -la /dev/usb* 2>/dev/null || bashio::log.warning "No /dev/usb devices found"
 bashio::log.info "USB bus devices:"
 lsusb 2>/dev/null || bashio::log.warning "lsusb not available"
-bashio::log.info "APC-related USB devices:"
-lsusb 2>/dev/null | grep -i apc || bashio::log.warning "No APC USB devices detected"
+bashio::log.info "Checking for APC vendor ID (051d):"
+lsusb 2>/dev/null | grep "051d" || bashio::log.warning "No APC vendor ID (051d) devices detected"
+bashio::log.info "HID devices (UPS likely uses HID):"
+ls -la /dev/hiddev* 2>/dev/null || bashio::log.warning "No HID devices found"
+bashio::log.info "USB device permissions:"
+ls -la /dev/bus/usb/*/*051d* 2>/dev/null || bashio::log.warning "Cannot find APC USB device files"
 
 # Test apcupsd is working
 bashio::log.info "Testing apcupsd daemon..."
