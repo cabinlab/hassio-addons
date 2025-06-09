@@ -8,6 +8,11 @@ RUN apk add --no-cache \
     bash \
     curl \
     nano \
+    git \
+    openssh-client \
+    vim \
+    less \
+    tree \
     && npm install -g @anthropic-ai/claude-code \
     && npm cache clean --force
 
