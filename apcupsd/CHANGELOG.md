@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.18] - 2025-01-08
+
+### 🔧 TARGETED FIX: apctest vs Daemon Device Discovery Gap
+- **Bridge apctest/daemon gap**: When apctest succeeds with blank device but daemon fails
+- **Device Discovery**: Extract actual device path that apctest uses successfully  
+- **Hybrid Approach**: Use apctest success to configure daemon with specific device
+- **Verbose Device Detection**: Enhanced logging to show which device apctest discovers
+- **Fallback Logic**: Default to /dev/usb/hiddev0 if device extraction fails
+
+### Problem Analysis
+- apctest consistently works with blank device configuration
+- apcupsd daemon fails with same blank device configuration  
+- Root cause: Different device access methods between apctest and daemon
+- Solution: Use apctest to discover working device, then configure daemon specifically
+
+This addresses the specific scenario where auto-detection works for testing but not for the running daemon.
+
 ## [2.0.17] - 2025-01-08
 
 ### 🔧 CRITICAL FIX: USB Device Configuration

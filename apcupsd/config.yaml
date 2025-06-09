@@ -1,6 +1,6 @@
 name: "APC UPS Daemon"
 description: "Monitor APC UPS devices with native apcupsd integration"
-version: "2.0.17"
+version: "2.0.18"
 slug: "apcupsd"
 init: false
 

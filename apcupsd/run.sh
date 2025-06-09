@@ -140,13 +140,40 @@ else
             bashio::log.info "Testing apcsmart with USB - trying blank device first (apcupsd best practice)..."
             sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE/g" $UPS_CONFIG_PATH
             
-            # Test with blank device
+            # Test with blank device and capture which device apctest actually uses
             if command -v apctest &> /dev/null; then
+                bashio::log.info "Testing apctest with blank device to discover working device..."
+                
+                # Test with apctest to see if it works with blank device
                 test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
                 if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
-                    bashio::log.info "SUCCESS: apcsmart works with blank device (auto-detection)!"
+                    bashio::log.info "✓ apctest succeeds with blank device"
                     bashio::log.info "UPS Response: $test_output"
-                    device_set=true
+                    
+                    # Since apctest works but daemon might not, try to determine which device apctest is using
+                    # Run apctest with more verbose output to see device selection
+                    apctest_device=$(timeout 5 bash -c "echo -e '1\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>&1 | grep -E 'Device.*open|Using.*device|Found.*device|Opened.*device'" || echo "")
+                    
+                    if [[ -n "$apctest_device" ]]; then
+                        bashio::log.info "apctest device info: $apctest_device"
+                        
+                        # Extract device path if possible
+                        device_path=$(echo "$apctest_device" | grep -oE '/dev/[^[:space:]]+' | head -1)
+                        if [[ -n "$device_path" ]]; then
+                            bashio::log.info "apctest discovered device: $device_path"
+                            bashio::log.info "Setting specific device for daemon compatibility..."
+                            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE $device_path/g" $UPS_CONFIG_PATH
+                            device_set=true
+                        else
+                            bashio::log.info "Could not extract device path from apctest, trying common paths..."
+                            device_set=false
+                        fi
+                    else
+                        # apctest works but we can't determine device - try hiddev0 as most likely
+                        bashio::log.info "apctest works but device unclear - trying /dev/usb/hiddev0 for daemon"
+                        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+                        device_set=true
+                    fi
                 else
                     bashio::log.info "Blank device test failed, trying specific device paths..."
                     bashio::log.info "Test output: $test_output"
