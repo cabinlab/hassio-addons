@@ -7,6 +7,7 @@ RUN apk add --no-cache \
     npm \
     bash \
     curl \
+    nano \
     && npm install -g @anthropic-ai/claude-code \
     && npm cache clean --force
 

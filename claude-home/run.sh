@@ -414,35 +414,15 @@ EOF
 # Create simplified Claude startup script using native settings
 create_claude_startup() {
     # Create a Node.js wrapper for Claude CLI to bypass BusyBox env issues
-    cat > /usr/local/bin/claude-wrapper << 'EOF'
+    cat > /usr/local/bin/claude << 'EOF'
 #!/bin/bash
 # Claude CLI wrapper to handle BusyBox compatibility issues
 
-# Find the real Claude CLI script
-CLAUDE_SCRIPT=$(npm list -g @anthropic-ai/claude-code 2>/dev/null | grep "@anthropic-ai/claude-code@" | head -1 | sed 's/.*-> //' | sed 's/@anthropic-ai\/claude-code@.*//')
-if [ -z "$CLAUDE_SCRIPT" ]; then
-    # Fallback to standard npm global location
-    CLAUDE_SCRIPT="/usr/local/lib/node_modules/@anthropic-ai/claude-code"
-fi
-
-CLAUDE_BIN="$CLAUDE_SCRIPT/bin/claude.js"
+CLAUDE_BIN="/usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"
 
 if [ ! -f "$CLAUDE_BIN" ]; then
-    # Try alternative locations
-    for path in "/usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js" "/usr/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js"; do
-        if [ -f "$path" ]; then
-            CLAUDE_BIN="$path"
-            break
-        fi
-    done
-fi
-
-if [ ! -f "$CLAUDE_BIN" ]; then
-    echo "ERROR: Could not find Claude CLI binary"
-    echo "Searched locations:"
-    echo "  $CLAUDE_SCRIPT/bin/claude.js"
-    echo "  /usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js"
-    echo "  /usr/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js"
+    echo "ERROR: Could not find Claude CLI binary at $CLAUDE_BIN"
+    echo "Expected location: /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"
     exit 1
 fi
 
@@ -450,21 +430,21 @@ fi
 exec node "$CLAUDE_BIN" "$@"
 EOF
 
-    chmod +x /usr/local/bin/claude-wrapper
+    chmod +x /usr/local/bin/claude
 
     cat > /tmp/start_claude.sh << 'EOF'
 #!/bin/bash
 
 echo "Checking Claude CLI installation..."
 
-# Check if node and claude-wrapper exist
+# Check if node and claude wrapper exist
 if ! command -v node >/dev/null 2>&1; then
     echo "ERROR: Node.js not found in PATH"
     echo "Starting bash shell instead..."
     exec bash
 fi
 
-if [ ! -f "/usr/local/bin/claude-wrapper" ]; then
+if [ ! -f "/usr/local/bin/claude" ]; then
     echo "ERROR: Claude wrapper not created"
     echo "Starting bash shell instead..."
     exec bash
@@ -476,18 +456,16 @@ echo "Starting Claude with native settings.json configuration..."
 # Check if we have authentication
 if [ ! -f "/config/claude-config/.claude" ] && [ ! -f "/config/claude-config/.claude.json" ] && [ ! -f "/root/.claude" ] && [ ! -f "/root/.claude.json" ]; then
     echo "No Claude authentication found. You'll need to authenticate first."
-    echo "Run 'claude-wrapper auth' to authenticate."
+    echo "Run 'claude auth' to authenticate."
     echo ""
     echo "Starting bash shell for authentication..."
-    echo "Note: Use 'claude-wrapper' instead of 'claude' for all commands"
     exec bash
 fi
 
 # Start Claude with better error handling
-claude-wrapper 2>&1 || {
+claude 2>&1 || {
     echo "Claude failed to start (exit code: $?)"
     echo "Starting bash shell instead..."
-    echo "Note: Use 'claude-wrapper' instead of 'claude' for all commands"
     exec bash
 }
 EOF
