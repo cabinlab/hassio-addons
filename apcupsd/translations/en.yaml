@@ -3,13 +3,17 @@ configuration:
     name: "UPS Display Name [OPTIONAL]"
     description: "A friendly name for your UPS (e.g., 'Office UPS'). Appears in Home Assistant sensors. Default: 'APC UPS'"
 
-  cable:
-    name: "🔴 Cable Type [REQUIRED]"
-    description: "Select how your UPS connects to the system. For modern UPS devices, choose 'USB'. For serial connections, select your specific cable model. Network UPS should use 'Ethernet'."
-  
-  type:
-    name: "🔴 Communication Protocol [REQUIRED]"  
-    description: "Must match your cable selection. Choose 'USB' for USB cables, 'Network' for ethernet connections, or 'APC Smart' for smart serial cables."
+  connection_type:
+    name: "🔴 Connection Type [REQUIRED]"
+    description: "Select how your UPS connects and communicates. Choose the option that matches your hardware setup."
+    options:
+      smart_usb: "🔌 Smart Cable + USB Protocol (RECOMMENDED for most modern APC UPS)"
+      usb_usb: "🔌 USB Cable + USB Protocol (Standard USB consumer UPS)"
+      smart_apcsmart: "📡 Smart Cable + APC Smart Protocol (Enterprise/older APC UPS with serial)"
+      usb_apcsmart: "📡 USB Cable + APC Smart Protocol (Hybrid - USB hardware with smart protocol)"
+      simple_dumb: "🔗 Simple Cable + Dumb Protocol (Basic serial UPS without smart features)"
+      ether_net: "🌐 Ethernet + Network Protocol (Network-attached UPS via TCP/IP)"
+      snmp_snmp: "📊 SNMP + SNMP Protocol (Enterprise UPS with SNMP management)"
   
   device:
     name: "Device Path or IP [OPTIONAL]"

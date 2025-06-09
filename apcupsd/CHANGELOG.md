@@ -1,201 +1,57 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2025-01-08
+
+### 🎨 MAJOR UX IMPROVEMENT: Simplified Connection Configuration
+- **Single Connection Type Dropdown**: Replace confusing separate Cable/Protocol dropdowns with unified selection
+- **Pre-tested Combinations**: Only show working cable/protocol combinations that are known to function
+- **Clear Descriptions**: Each option explains what hardware setup it supports with emoji icons
+- **Recommended Default**: Set `smart_usb` as default (the proven working configuration)
+- **Eliminates Confusion**: No more guessing which cable+protocol combinations work together
+
+### Available Connection Types
+- 🔌 **Smart Cable + USB Protocol** (RECOMMENDED - proven working)
+- 🔌 **USB Cable + USB Protocol** (Standard consumer UPS)
+- 📡 **Smart Cable + APC Smart Protocol** (Enterprise/serial UPS)
+- 📡 **USB Cable + APC Smart Protocol** (Hybrid configuration)
+- 🔗 **Simple Cable + Dumb Protocol** (Basic serial UPS)
+- 🌐 **Ethernet + Network Protocol** (Network UPS)
+- 📊 **SNMP + SNMP Protocol** (Enterprise SNMP UPS)
+
 ## [2.0.20] - 2025-01-08
 
-### 🔧 CRITICAL FIX: Full Hardware Access for USB Devices
-- **Add full_access: true**: Enable full hardware access like original working version
-- **Resolve Read-Only Filesystem**: Fix "Read-only file system" errors preventing device access
-- **Match Original Configuration**: Restore the hardware privileges that made the pre-fork version work
-- **USB Device Write Access**: Allow daemon to properly communicate with UPS hardware
-- **Container Privilege Fix**: Remove restrictive container security that blocked USB communication
+### 🔧 CRITICAL FIX: Container Permissions for USB Devices
+- **Added `full_access: true`**: Enables proper USB device access in container environment
+- **Resolved "Read-only file system" errors**: Fixed the core issue preventing daemon communication
+- **Restored original functionality**: Matches the hardware access that made the pre-fork version work
 
-### Root Cause Resolution
-Based on user feedback that this UPS worked with the pre-fork version 3+ years ago, the issue was missing **full_access: true** in the container configuration. The original working version had broader hardware access that our modernized security-focused version lacked.
+### Root Cause & Solution
+The modernized add-on had restrictive container security that prevented USB device write access. After extensive troubleshooting including device auto-detection, permissions fixes, and protocol testing, the issue was identified as missing container privileges. Adding `full_access: true` restored the hardware access needed for USB UPS communication.
 
-**This should restore the working functionality from the original apcupsd add-on!**
-
-## [2.0.19] - 2025-01-08
-
-### 🔧 PERMISSIONS FIX: Device Access Rights
-- **Device Permissions Fix**: Automatically fix hiddev device permissions before daemon startup
-- **Root Cause Resolution**: Address device permission issues that prevent daemon communication
-- **Comprehensive Fix**: Fix permissions for both specific devices and all hiddev devices
-- **Enhanced Logging**: Show device permissions before and after fix attempts
-- **Targeted Solution**: Based on analysis showing consistent permission issues in logs
-
-### Technical Details
-- Change device permissions from 600 (crw-------) to 666 (crw-rw-rw-)
-- Ensure proper ownership (root:root) for all hiddev devices
-- Fix permissions for specific DEVICE setting and all /dev/usb/hiddev* devices
-- This addresses the consistent "Device permissions issue" warnings in logs
-
-**This should resolve the core permissions barrier preventing daemon UPS communication!**
-
-## [2.0.18] - 2025-01-08
-
-### 🔧 TARGETED FIX: apctest vs Daemon Device Discovery Gap
-- **Bridge apctest/daemon gap**: When apctest succeeds with blank device but daemon fails
-- **Device Discovery**: Extract actual device path that apctest uses successfully  
-- **Hybrid Approach**: Use apctest success to configure daemon with specific device
-- **Verbose Device Detection**: Enhanced logging to show which device apctest discovers
-- **Fallback Logic**: Default to /dev/usb/hiddev0 if device extraction fails
-
-### Problem Analysis
-- apctest consistently works with blank device configuration
-- apcupsd daemon fails with same blank device configuration  
-- Root cause: Different device access methods between apctest and daemon
-- Solution: Use apctest to discover working device, then configure daemon specifically
-
-This addresses the specific scenario where auto-detection works for testing but not for the running daemon.
-
-## [2.0.17] - 2025-01-08
-
-### 🔧 CRITICAL FIX: USB Device Configuration
-- **Blank Device Setting**: Implement apcupsd best practice of leaving DEVICE blank for USB connections
-- **Auto-Detection Priority**: For USB and apcsmart+USB, try blank device first before specific paths  
-- **Follows Documentation**: Aligns with official apcupsd guidance that USB devices should auto-detect
-- **Permissions Fix**: Resolves device permission issues by letting apcupsd handle USB detection
-- **Research-Based Solution**: Implements fix discovered from apcupsd community troubleshooting
-
-### Technical Changes
-- USB type: Always use blank DEVICE setting for auto-detection
-- apcsmart+USB: Try blank device first, fallback to specific paths if needed
-- Improved logging to show when using auto-detection vs specific device paths
-- Based on extensive research showing COMMLOST issues caused by explicit device paths
-
-**This should resolve the persistent COMMLOST communication issues!**
-
-## [2.0.16] - 2025-01-08
-
-### Enhanced Debugging
-- **Daemon Initialization Monitoring**: Added detailed monitoring of apcupsd daemon startup process
-- **Configuration Verification**: Final configuration check before daemon startup with device permissions
-- **Debug Mode Startup**: Start apcupsd with debug level 10 for enhanced logging
-- **Immediate Status Testing**: Test UPS communication immediately after daemon startup
-- **Process Monitoring**: Track daemon PID and verify it stays running during initialization
-- **Enhanced Error Detection**: Better detection of daemon startup failures and crashes
-
-### Technical Improvements
-- Added pre-startup device permission verification and logging
-- Enhanced daemon startup sequence with debug mode and process monitoring
-- Immediate post-startup communication testing to identify timing issues
-- Better error detection for daemon initialization failures
-
-## [2.0.15] - 2025-01-08
-
-### Enhanced
-- **Advanced Communication Testing**: Enhanced device testing to verify actual UPS communication before startup
-- **Smart Cable Auto-Detection**: Automatically tests smart cable configuration if standard methods fail
-- **Real UPS Response Validation**: Uses apctest with actual query commands to verify device compatibility
-- **Intelligent Configuration Switching**: Automatically suggests and tests smart cable configuration
-- **Enhanced Debugging Output**: Shows actual UPS response data during device testing
-
-### Technical Improvements
-- Replaced basic apctest existence check with actual UPS communication testing
-- Added smart cable configuration fallback for devices that need specific cable settings
-- Enhanced device testing with UPS response validation and detailed logging
-- Improved configuration recommendations based on actual device response testing
-
-## [2.0.14] - 2025-01-08
-
-### Enhanced
-- **Proactive Device Testing**: Enhanced auto-detection logic to test both hiddev0 and hiddev1 during initial setup
-- **Smart Device Selection**: For apcsmart protocol, test device compatibility using apctest before daemon startup
-- **Improved Fallback Logic**: Better device preference handling with accessibility testing
-- **Enhanced Debugging**: More detailed logging for device selection and compatibility testing
-- **Reduced COMMLOST Issues**: Proactive device testing reduces communication failures
-
-### Technical Improvements
-- Replaced simple device existence check with actual compatibility testing
-- Added apctest integration for device validation before daemon startup
-- Enhanced device auto-detection with preference-based testing
-- Improved error handling and fallback mechanisms for device selection
-
-## [2.0.8] - 2025-01-07
-
-### Fixed
-- **Dynamic hostname detection**: Auto-discover the correct full add-on slug (e.g., "12862deb-apcupsd")
-- Query Supervisor API to get the actual add-on hostname with repository hash
-- Update both API config flow and configuration.yaml methods to use detected hostname
-- Improve error messages to show the correct hostname for manual setup
-- Documentation updated with example of full hostname format
-
-## [2.0.7] - 2025-01-07
-
-### Fixed
-- Fix auto-discovery to use correct hostname "apcupsd" instead of "localhost"
-- Prioritize configuration.yaml method over API config flow (more reliable)
-- Update documentation to clarify manual integration setup with correct hostname
-- Improve auto-discovery notifications and error handling
+### What We Learned
+- **Strategies that didn't work**: Device path auto-detection, permission changes, protocol switching
+- **Root cause**: Container filesystem restrictions preventing daemon USB access  
+- **Solution**: Container-level privilege escalation (`full_access: true`)
+- **Key insight**: apctest worked (read-only) but daemon failed (needed write access)
 
 ## [2.0.6] - 2025-01-07
 
-### Added
-- **Auto-Discovery Integration**: Automatically sets up Home Assistant's native APC UPS Daemon integration
-  - Auto-configures integration via Supervisor API with host: "apcupsd", port: 3551
-  - Falls back to configuration.yaml method if API unavailable
-  - Sends notification when integration is configured
-  - New `auto_discovery` configuration option (default: enabled)
-- Integration health monitoring and conflict detection
-- Wait for Home Assistant readiness before attempting discovery
-
-### Enhanced
-- Seamless integration with Home Assistant's built-in apcupsd sensors
-- No manual integration setup required - works out of the box
-- Comprehensive logging for auto-discovery process
-
-## [2.0.5] - 2025-01-07
-
-### Fixed
-- Remove invalid `services:` section from config.yaml that prevented add-on from appearing in store
-- Add-on should now be visible and installable again
-
-## [2.0.4] - 2025-01-07
-
-### Added (Experimental)
-- **UPS Power Control Services**: Remote power management via Home Assistant (testing)
-  - `ups_shutdown_return` - Graceful shutdown with auto-restart on power return
-  - `ups_load_off` - Cut power to outlets with configurable delay
-  - `ups_load_on` - Restore power to outlets with configurable delay  
-  - `ups_reboot` - Power cycle UPS with configurable off/on delays
-  - `ups_emergency_kill` - Immediate emergency power cut
-- Power control script with safety validation and logging
-- Service parameter validation (0-7200 second delays)
-- Comprehensive documentation with automation examples
-
-### Enhanced
-- Service monitoring loop for Home Assistant API integration
-- Improved logging with power control operation tracking
-- Safety warnings for destructive power operations
-
-## [2.0.3] - 2025-01-07
-
-### Enhanced
-- Moved UPS Display Name back to the top of configuration fields
-- Added clear visual indicators for required vs optional fields:
-  - Required fields marked with 🔴 emoji and [REQUIRED] tag
-  - Optional fields marked with [OPTIONAL] tag
-- Improved field labeling for better clarity at a glance
-- Created alternative translation without emojis for compatibility
+### Added Auto-Discovery Integration
+- **Automatic Home Assistant Integration**: Sets up native APC UPS Daemon integration automatically
+- **Dynamic Hostname Detection**: Discovers correct add-on hostname with repository hash
+- **Seamless Setup**: No manual integration configuration required
+- **UPS Power Control Services**: Added remote power management commands
+  - Graceful shutdown with auto-restart, load control, reboot, emergency kill
+  - Safety validation and comprehensive logging
 
 ## [2.0.2] - 2025-01-07
 
-### Enhanced
-- Improved configuration UI with clearer field organization
-- Added "Required" and "Optional" labels to field descriptions for better UX
-- Reorganized fields to show required settings (cable, type) first
-- Updated field names to be more concise and user-friendly
-- Enhanced help text with practical examples and recommendations
-- Made cable and type fields properly required (removed optional ? suffix)
-- Improved default values: battery_level 5% → 10%, timeout_minutes 3 → 5
-
-## [2.0.1] - 2025-06-06
-
-### Fixed
-- Add apk update before package installation to resolve installation failures
-- Fix apcupsd script placement - copy to /etc/apcupsd/ instead of overwriting system binaries
-- Ensure package repository index is current before installing apcupsd
+### Enhanced Configuration UI
+- **Improved User Experience**: Clear visual indicators for required vs optional fields
+- **Better Field Organization**: Logical grouping with helpful descriptions and examples
+- **Enhanced Translations**: Comprehensive help text for each configuration option
+- **Refined Defaults**: Optimized battery level (10%) and timeout (5 minutes) settings
 
 ## [2.0.0] - 2025-06-06
 

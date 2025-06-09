@@ -69,12 +69,49 @@ sanitize_config_value() {
 bashio::log.info "Loading APC UPS configuration..."
 
 NAME=$(jq --raw-output ".name" $CONFIG_PATH)
-CABLE=$(jq --raw-output ".cable" $CONFIG_PATH)
-TYPE=$(jq --raw-output ".type" $CONFIG_PATH)
+CONNECTION_TYPE=$(jq --raw-output ".connection_type" $CONFIG_PATH)
 DEVICE=$(jq --raw-output ".device" $CONFIG_PATH)
 BATTERY_LEVEL=$(jq --raw-output ".battery_level" $CONFIG_PATH)
 MINUTES_ON_BATTERY=$(jq --raw-output ".timeout_minutes" $CONFIG_PATH)
 AUTO_DISCOVERY=$(jq --raw-output ".auto_discovery" $CONFIG_PATH)
+
+# Parse connection type into cable and type components
+case "$CONNECTION_TYPE" in
+    "smart_usb")
+        CABLE="smart"
+        TYPE="usb"
+        ;;
+    "usb_usb")
+        CABLE="usb"
+        TYPE="usb"
+        ;;
+    "smart_apcsmart")
+        CABLE="smart"
+        TYPE="apcsmart"
+        ;;
+    "usb_apcsmart")
+        CABLE="usb"
+        TYPE="apcsmart"
+        ;;
+    "simple_dumb")
+        CABLE="simple"
+        TYPE="dumb"
+        ;;
+    "ether_net")
+        CABLE="ether"
+        TYPE="net"
+        ;;
+    "snmp_snmp")
+        CABLE="snmp"
+        TYPE="snmp"
+        ;;
+    *)
+        bashio::log.error "Invalid connection type: $CONNECTION_TYPE"
+        exit 1
+        ;;
+esac
+
+bashio::log.info "Using connection type: $CONNECTION_TYPE (Cable: $CABLE, Protocol: $TYPE)"
 
 # Validate all inputs
 error=0
