@@ -117,8 +117,8 @@ if [ -f /data/options.json ]; then
     export ANTHROPIC_MODEL=$(jq -r '.claude_model // "claude-3-5-haiku-20241022"' /data/options.json 2>/dev/null || echo "claude-3-5-haiku-20241022")
 fi
 
-# Use npx to run Claude CLI with all arguments passed through
-exec npx -y @anthropic/claude-cli "$@"
+# Use npx to run Claude Code CLI with all arguments passed through
+exec npx -y @anthropic-ai/claude-code "$@"
 WRAPPER_EOF
     
     chmod +x /usr/local/bin/claude
