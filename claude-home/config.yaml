@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "1.4.5"
+version: "1.4.6"
 slug: "claude_home"
 init: false
 
@@ -27,7 +27,7 @@ ports_description:
 
 # Add-on configuration options
 options:
-  claude_model: "claude-3-5-sonnet-20241022"
+  claude_model: "claude-3-5-haiku-20241022"
   theme: "dark"
   verbose_logging: false
   max_turns: 10
@@ -40,7 +40,7 @@ options:
   context_max_entities: 100
 
 schema:
-  claude_model: "list(claude-3-5-sonnet-20241022|claude-3-5-haiku-20241022|claude-3-opus-20240229|claude-3-sonnet-20240229|claude-3-haiku-20240307)?"
+  claude_model: "list(claude-3-5-haiku-20241022|sonnet|default|opus)?"
   theme: "list(dark|light|light-daltonized|dark-daltonized)?"
   verbose_logging: "bool?"
   max_turns: "int(1,50)?"

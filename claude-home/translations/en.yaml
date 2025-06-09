@@ -1,0 +1,56 @@
+configuration:
+  claude_model:
+    name: "🤖 Claude Model [IMPORTANT - COST IMPACT]"
+    description: "Select the Claude AI model. Pricing varies dramatically - choose carefully to manage token costs."
+    options:
+      claude-3-5-haiku-20241022: "✅ Haiku (RECOMMENDED) - 5x cheaper than Sonnet, perfect for HA tasks"
+      sonnet: "⚡ Sonnet - Balanced performance (baseline cost)"
+      default: "⚠️ Default - Starts with Opus (WARNING: Up to 5x more expensive)"
+      opus: "💰 Opus - Most powerful (WARNING: 5x more expensive than Sonnet)"
+
+  theme:
+    name: "🎨 Terminal Theme"
+    description: "Choose the visual appearance of your terminal interface."
+    options:
+      dark: "🌙 Dark - Easy on the eyes, recommended for most users"
+      light: "☀️ Light - Bright interface for well-lit environments" 
+      light-daltonized: "🔆 Light (Colorblind Friendly) - Enhanced contrast for accessibility"
+      dark-daltonized: "🌙 Dark (Colorblind Friendly) - Dark theme with accessibility enhancements"
+
+  verbose_logging:
+    name: "📝 Verbose Logging"
+    description: "Enable detailed logging for debugging. Keep disabled unless troubleshooting issues."
+
+  max_turns:
+    name: "🔄 Max Conversation Turns"
+    description: "Maximum number of back-and-forth exchanges in a single conversation. Higher values use more tokens."
+
+  disable_telemetry:
+    name: "🔒 Disable Telemetry"
+    description: "Prevent Claude from sending usage analytics. Enable for maximum privacy."
+
+  terminal_bell:
+    name: "🔔 Terminal Bell"
+    description: "Play sound notifications for terminal events and completions."
+
+  ha_notifications:
+    name: "📢 Home Assistant Notifications"
+    description: "Send Claude activity notifications to Home Assistant. Useful for monitoring AI usage."
+
+  notification_service:
+    name: "📨 Notification Service"
+    description: "Home Assistant service to use for notifications (e.g., 'notify.mobile_app_phone')."
+
+  context_integration:
+    name: "🏠 Home Assistant Context"
+    description: "Enable Claude to access Home Assistant state and entity information for better assistance."
+
+  context_domains:
+    name: "🏷️ Context Domains"
+    description: "Comma-separated list of Home Assistant domains to include in context (e.g., 'light,switch,sensor')."
+
+  context_max_entities:
+    name: "📊 Max Context Entities"
+    description: "Maximum number of entities to include in context. Lower values reduce token usage."
+
+network: {}
