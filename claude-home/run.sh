@@ -416,9 +416,37 @@ create_claude_startup() {
     cat > /tmp/start_claude.sh << 'EOF'
 #!/bin/bash
 
-# Start Claude with native settings.json configuration
-# Claude will automatically read settings from ANTHROPIC_CONFIG_DIR/settings.json
-exec claude
+echo "Checking Claude CLI installation..."
+
+# Check if claude command exists
+if ! command -v claude >/dev/null 2>&1; then
+    echo "ERROR: Claude CLI not found in PATH"
+    echo "PATH: $PATH"
+    echo "Checking npm global packages..."
+    npm list -g --depth=0 2>/dev/null || echo "npm not available"
+    echo ""
+    echo "Starting bash shell instead..."
+    exec bash
+fi
+
+echo "Claude CLI found at: $(which claude)"
+echo "Starting Claude with native settings.json configuration..."
+
+# Check if we have authentication
+if [ ! -f "/config/claude-config/.claude" ] && [ ! -f "/config/claude-config/.claude.json" ] && [ ! -f "/root/.claude" ] && [ ! -f "/root/.claude.json" ]; then
+    echo "No Claude authentication found. You'll need to authenticate first."
+    echo "Run 'claude auth' to authenticate."
+    echo ""
+    echo "Starting bash shell for authentication..."
+    exec bash
+fi
+
+# Start Claude with better error handling
+claude 2>&1 || {
+    echo "Claude failed to start (exit code: $?)"
+    echo "Starting bash shell instead..."
+    exec bash
+}
 EOF
 
     chmod +x /tmp/start_claude.sh
@@ -448,7 +476,7 @@ start_web_terminal() {
         startup_command="$startup_command && echo '' && cat /tmp/ha_context_welcome.txt"
     fi
     
-    startup_command="$startup_command && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && /tmp/start_claude.sh && /usr/local/bin/credentials-manager save"
+    startup_command="$startup_command && echo 'To log out: run claude-logout' && echo '' && echo 'Starting Claude...' && sleep 1 && /tmp/start_claude.sh"
     
     exec ttyd \
         --port "${port}" \
