@@ -102,58 +102,26 @@ install_tools() {
     apk add --no-cache ttyd curl
 }
 
-# Install claude wrapper to fix BusyBox env -S issue
+# Install claude command to provide CLI access
 install_claude_wrapper() {
-    bashio::log.info "Installing Claude wrapper to fix BusyBox compatibility..."
+    bashio::log.info "Installing Claude command for CLI access..."
     
-    cat > /usr/local/bin/hiclaude << 'WRAPPER_EOF'
+    # Simple npx-based command until v2.0.0 clean container
+    cat > /usr/local/bin/claude << 'WRAPPER_EOF'
 #!/bin/bash
-# Claude wrapper to fix BusyBox env -S issue
+# Temporary claude command for full CLI access
+# This provides access to all CLI options: --help, --resume, --model, etc.
 
-# Find the npx-installed Claude CLI
-CLAUDE_CLI_PATH=""
-
-# First check common npx cache locations
-for dir in /root/.npm/_npx/*/node_modules/@anthropic/claude-cli/dist/bin/claude.js \
-           /root/.npm/_npx/*/node_modules/.bin/claude; do
-    if [ -f "$dir" ]; then
-        if [[ "$dir" == *".bin/claude" ]]; then
-            # This is the bin wrapper, get the actual JS file it points to
-            ACTUAL_TARGET=$(readlink -f "$dir" 2>/dev/null)
-            if [ -f "$ACTUAL_TARGET" ]; then
-                CLAUDE_CLI_PATH="$ACTUAL_TARGET"
-                break
-            fi
-        else
-            # This is the actual JS file
-            CLAUDE_CLI_PATH="$dir"
-            break
-        fi
-    fi
-done
-
-# If not found in common locations, search for it
-if [ -z "$CLAUDE_CLI_PATH" ] || [ ! -f "$CLAUDE_CLI_PATH" ]; then
-    CLAUDE_CLI_PATH=$(find /root/.npm -name "claude.js" -path "*/@anthropic/claude-cli/dist/bin/*" 2>/dev/null | head -1)
-fi
-
-# If still not found, error out
-if [ -z "$CLAUDE_CLI_PATH" ] || [ ! -f "$CLAUDE_CLI_PATH" ]; then
-    echo "Error: Claude CLI not found. Please run 'npx -y @anthropic/claude-cli' first." >&2
-    exit 1
-fi
-
-# Ensure ANTHROPIC_MODEL is set if available
+# Ensure model is set from config
 if [ -f /data/options.json ]; then
     export ANTHROPIC_MODEL=$(jq -r '.claude_model // "claude-3-5-haiku-20241022"' /data/options.json 2>/dev/null || echo "claude-3-5-haiku-20241022")
 fi
 
-# Execute Claude CLI with Node.js directly, bypassing shebang issues
-exec node "$CLAUDE_CLI_PATH" "$@"
+# Use npx to run Claude CLI with all arguments passed through
+exec npx -y @anthropic/claude-cli "$@"
 WRAPPER_EOF
     
-    chmod +x /usr/local/bin/hiclaude
-    ln -sf /usr/local/bin/hiclaude /usr/local/bin/claude
+    chmod +x /usr/local/bin/claude
     bashio::log.info "Claude wrapper installed successfully"
 }
 
