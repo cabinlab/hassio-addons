@@ -63,8 +63,10 @@ create_claude_settings() {
     local notification_service_escaped="${notification_service//\\/\\\\}"
     notification_service_escaped="${notification_service_escaped//\"/\\\"}"
     
-    # Create Claude settings.json with native configuration format
-    cat > /config/claude-config/settings.json << EOF
+    # Create Claude settings.json in the CORRECT location (~/.claude/settings.json)
+    mkdir -p /root/.claude
+    
+    cat > /root/.claude/settings.json << EOF
 {
   "env": {
     "ANTHROPIC_MODEL": "$claude_model"
@@ -83,8 +85,13 @@ create_claude_settings() {
 }
 EOF
     
+    chmod 600 /root/.claude/settings.json
+    bashio::log.info "Claude settings.json created at ~/.claude/settings.json with model: $claude_model"
+    
+    # Also copy to our traditional location for backwards compatibility
+    mkdir -p /config/claude-config
+    cp /root/.claude/settings.json /config/claude-config/settings.json
     chmod 600 /config/claude-config/settings.json
-    bashio::log.info "Claude settings.json created with model: $claude_model"
     bashio::log.info "Settings file contents:"
     cat /config/claude-config/settings.json
 }
@@ -93,6 +100,61 @@ EOF
 install_tools() {
     bashio::log.info "Installing additional tools..."
     apk add --no-cache ttyd curl
+}
+
+# Install claude wrapper to fix BusyBox env -S issue
+install_claude_wrapper() {
+    bashio::log.info "Installing Claude wrapper to fix BusyBox compatibility..."
+    
+    cat > /usr/local/bin/hiclaude << 'WRAPPER_EOF'
+#!/bin/bash
+# Claude wrapper to fix BusyBox env -S issue
+
+# Find the npx-installed Claude CLI
+CLAUDE_CLI_PATH=""
+
+# First check common npx cache locations
+for dir in /root/.npm/_npx/*/node_modules/@anthropic/claude-cli/dist/bin/claude.js \
+           /root/.npm/_npx/*/node_modules/.bin/claude; do
+    if [ -f "$dir" ]; then
+        if [[ "$dir" == *".bin/claude" ]]; then
+            # This is the bin wrapper, get the actual JS file it points to
+            ACTUAL_TARGET=$(readlink -f "$dir" 2>/dev/null)
+            if [ -f "$ACTUAL_TARGET" ]; then
+                CLAUDE_CLI_PATH="$ACTUAL_TARGET"
+                break
+            fi
+        else
+            # This is the actual JS file
+            CLAUDE_CLI_PATH="$dir"
+            break
+        fi
+    fi
+done
+
+# If not found in common locations, search for it
+if [ -z "$CLAUDE_CLI_PATH" ] || [ ! -f "$CLAUDE_CLI_PATH" ]; then
+    CLAUDE_CLI_PATH=$(find /root/.npm -name "claude.js" -path "*/@anthropic/claude-cli/dist/bin/*" 2>/dev/null | head -1)
+fi
+
+# If still not found, error out
+if [ -z "$CLAUDE_CLI_PATH" ] || [ ! -f "$CLAUDE_CLI_PATH" ]; then
+    echo "Error: Claude CLI not found. Please run 'npx -y @anthropic/claude-cli' first." >&2
+    exit 1
+fi
+
+# Ensure ANTHROPIC_MODEL is set if available
+if [ -f /data/options.json ]; then
+    export ANTHROPIC_MODEL=$(jq -r '.claude_model // "claude-3-5-haiku-20241022"' /data/options.json 2>/dev/null || echo "claude-3-5-haiku-20241022")
+fi
+
+# Execute Claude CLI with Node.js directly, bypassing shebang issues
+exec node "$CLAUDE_CLI_PATH" "$@"
+WRAPPER_EOF
+    
+    chmod +x /usr/local/bin/hiclaude
+    ln -sf /usr/local/bin/hiclaude /usr/local/bin/claude
+    bashio::log.info "Claude wrapper installed successfully"
 }
 
 # Setup credential management and security scripts
@@ -434,17 +496,24 @@ setup_clean_credentials() {
 
 # Check Claude authentication status
 check_claude_auth() {
-    # Check for credential files in persistent and runtime locations
-    if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
+    # Claude CLI stores auth in ~/.config/claude/auth.json after authentication
+    local primary_auth_file="/root/.config/claude/auth.json"
+    
+    # Check multiple possible locations
+    if [ -f "$primary_auth_file" ] || [ -f "/config/claude-config/auth.json" ] || 
+       [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] ||
        [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
-        # Try a quick validation by checking if claude can run without auth prompts
-        if timeout 3 claude --version >/dev/null 2>&1; then
+        # Try a validation with --no-update-check to avoid update prompts
+        if timeout 5 claude --no-update-check --version >/dev/null 2>&1; then
             export CLAUDE_AUTH_STATUS="authenticated"
+            bashio::log.info "Claude authentication verified"
         else
             export CLAUDE_AUTH_STATUS="invalid"
+            bashio::log.warning "Credential files found but authentication test failed"
         fi
     else
         export CLAUDE_AUTH_STATUS="missing"
+        bashio::log.info "No Claude credential files found"
     fi
 }
 
@@ -535,10 +604,24 @@ start_web_terminal() {
 #!/bin/bash
 # Claude Home functions
 
+# Ensure ANTHROPIC_MODEL is set from config
+if [ -f /data/options.json ]; then
+    export ANTHROPIC_MODEL=$(jq -r '.claude_model // "claude-3-5-haiku-20241022"' /data/options.json)
+fi
+
 check_claude_auth() {
-    # Simplified auth check - just test if claude works
-    if timeout 3 claude --version >/dev/null 2>&1; then
-        export CLAUDE_AUTH_STATUS="authenticated"
+    # Claude CLI stores auth in ~/.config/claude/auth.json
+    local primary_auth_file="/root/.config/claude/auth.json"
+    
+    # Check if auth files exist in any known location
+    if [ -f "$primary_auth_file" ] || [ -f "/config/claude-config/auth.json" ] || 
+       [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
+        # Test with --no-update-check to avoid update prompts
+        if timeout 5 claude --no-update-check --version >/dev/null 2>&1; then
+            export CLAUDE_AUTH_STATUS="authenticated"
+        else
+            export CLAUDE_AUTH_STATUS="invalid"
+        fi
     else
         export CLAUDE_AUTH_STATUS="missing"
     fi
@@ -574,10 +657,12 @@ show_terminal_header() {
             echo ""
             if [ "$auto_claude_setting" = "true" ]; then
                 echo "                  Auto-starting Claude..."
+                echo "                  Model: $ANTHROPIC_MODEL"
                 sleep 1
-                exec claude
+                exec claude --model "$ANTHROPIC_MODEL"
             else
                 echo "             Run 'claude' to start, or 'claude --help' for options"
+                echo "             Model: $ANTHROPIC_MODEL"
             fi
             ;;
         *)
@@ -604,6 +689,7 @@ main() {
     
     init_environment
     install_tools
+    install_claude_wrapper
     setup_security_scripts
     apply_security_policies
     apply_app_security
