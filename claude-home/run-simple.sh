@@ -1,6 +1,6 @@
 #!/usr/bin/with-contenv bashio
 
-# Simple run script for testing
+# Simple run script with nice UI
 
 bashio::log.info "Claude Home starting..."
 
@@ -21,6 +21,57 @@ EOF
 
 bashio::log.info "Model set to: $CLAUDE_MODEL"
 
+# Create startup script with ASCII header
+cat > /tmp/startup.sh << 'EOF'
+#!/bin/bash
+
+# Colors
+CYAN='\033[38;2;79;195;193m'
+BRIGHT_ORANGE='\033[1;38;2;244;132;95m'
+GREEN='\033[0;32m'
+RESET='\033[0m'
+
+clear
+
+# ASCII Header
+echo -e "${CYAN}"
+echo "  ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗"
+echo " ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝"
+echo " ██║     ██║     ███████║██║   ██║██║  ██║█████╗  "
+echo " ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  "
+echo " ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗"
+echo "  ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
+echo ""
+echo "                    ██╗  ██╗ ██████╗ ███╗   ███╗███████╗"
+echo "                    ██║  ██║██╔═══██╗████╗ ████║██╔════╝"
+echo "                    ███████║██║   ██║██╔████╔██║█████╗  "
+echo "                    ██╔══██║██║   ██║██║╚██╔╝██║██╔══╝  "
+echo "                    ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗"
+echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝"
+echo -e "${RESET}"
+echo ""
+
+# Check if authenticated by looking for Claude credential files
+# Claude Code stores auth in ~/.config/claude/auth.json
+if [ -f "/root/.config/claude/auth.json" ] || [ -f "/root/.claude/credentials" ] || [ -f "/config/claude-config/auth.json" ]; then
+    echo -e "                ${GREEN}***** Authenticated *****${RESET}"
+    echo ""
+    echo "             Run 'claude' to start an interactive session"
+    echo "             Run 'claude --help' to see all options"
+else
+    echo -e "              ${BRIGHT_ORANGE}¡¡¡¡¡ Not authenticated yet !!!!!${RESET}"
+    echo ""
+    echo "             Run 'claude' and follow the prompts to login"
+fi
+echo ""
+echo "             Model: ${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
+echo ""
+
+exec bash
+EOF
+
+chmod +x /tmp/startup.sh
+
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
 
@@ -28,4 +79,4 @@ exec ttyd \
     --port 7681 \
     --interface 0.0.0.0 \
     --writable \
-    bash -c "echo 'Claude Home Terminal'; echo 'Run: claude auth'; echo ''; exec bash"
+    /tmp/startup.sh
