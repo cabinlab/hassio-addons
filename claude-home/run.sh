@@ -23,6 +23,11 @@ init_environment() {
     export ANTHROPIC_CONFIG_DIR="/config/claude-config"
     export HOME="/root"
     
+    # Also set model directly as environment variable as fallback
+    local claude_model_config=$(bashio::config 'claude_model' 'claude-3-5-haiku-20241022')
+    export ANTHROPIC_MODEL="$claude_model_config"
+    bashio::log.info "Set ANTHROPIC_MODEL environment variable to: $claude_model_config"
+    
     # Read configuration from Home Assistant and create Claude settings
     create_claude_settings
     
@@ -45,6 +50,8 @@ create_claude_settings() {
     # Read configuration from Home Assistant
     local claude_model=$(bashio::config 'claude_model' 'claude-3-5-haiku-20241022')
     local theme=$(bashio::config 'theme' 'dark')
+    
+    bashio::log.info "Configuration read: model=$claude_model, theme=$theme"
     local verbose_logging=$(bashio::config 'verbose_logging' 'false')
     local max_turns=$(bashio::config 'max_turns' '10')
     local terminal_bell=$(bashio::config 'terminal_bell' 'true')
@@ -85,7 +92,9 @@ create_claude_settings() {
 EOF
     
     chmod 600 /config/claude-config/settings.json
-    bashio::log.info "Claude settings.json created with native configuration"
+    bashio::log.info "Claude settings.json created with model: $claude_model"
+    bashio::log.info "Settings file contents:"
+    cat /config/claude-config/settings.json
 }
 
 # Install required tools
@@ -582,20 +591,20 @@ show_terminal_header() {
     
     case "$CLAUDE_AUTH_STATUS" in
         "authenticated")
-            echo -e "${GREEN}***** Authenticated *****${RESET}"
+            echo "                      ${GREEN}***** Authenticated *****${RESET}"
             echo ""
             if [ "$auto_claude_setting" = "true" ]; then
-                echo "Auto-starting Claude..."
+                echo "                        Auto-starting Claude..."
                 sleep 1
                 exec claude
             else
-                echo "Run 'claude' to start, or 'claude --help' for options"
+                echo "                   Run 'claude' to start, or 'claude --help' for options"
             fi
             ;;
         *)
-            echo -e "${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
+            echo "                    ${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
             echo ""
-            echo "Run 'claude auth' to authenticate"
+            echo "                       Run 'claude auth' to authenticate"
             ;;
     esac
     echo ""
