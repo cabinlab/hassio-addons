@@ -11,11 +11,6 @@ configuration:
   theme:
     name: "🎨 Terminal Theme"
     description: "Choose the visual appearance of your terminal interface."
-    options:
-      dark: "🌙 Dark - Easy on the eyes, recommended for most users"
-      light: "☀️ Light - Bright interface for well-lit environments" 
-      light-daltonized: "🔆 Light (Colorblind Friendly) - Enhanced contrast for accessibility"
-      dark-daltonized: "🌙 Dark (Colorblind Friendly) - Dark theme with accessibility enhancements"
 
   auto_claude:
     name: "🚀 Auto-Start Claude"
