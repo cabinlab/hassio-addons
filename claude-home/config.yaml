@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "1.4.29"
+version: "1.4.30"
 slug: "claude_home"
 init: false
 
@@ -27,7 +27,7 @@ ports_description:
 
 # Add-on configuration options
 options:
-  claude_model: "Haiku - RECOMMENDED for Home Assistant"
+  claude_model: "haiku"
   theme: "dark"
   auto_claude: false
   verbose_logging: false
@@ -41,7 +41,7 @@ options:
   context_max_entities: 100
 
 schema:
-  claude_model: "list(Haiku - RECOMMENDED for Home Assistant|Opus - Most powerful and up to 19x cost|Sonnet - More powerful and 4x cost)"
+  claude_model: "list(haiku|sonnet|opus)"
   theme: "list(dark|light|system|high-contrast|auto)"
   auto_claude: "bool?"
   verbose_logging: "bool?"

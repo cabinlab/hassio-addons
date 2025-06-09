@@ -9,15 +9,15 @@ mkdir -p /root/.claude
 mkdir -p /config/claude-config
 
 # Get model from config and map to actual model ID
-MODEL_CHOICE=$(bashio::config 'claude_model' 'Haiku - RECOMMENDED for Home Assistant')
+MODEL_CHOICE=$(bashio::config 'claude_model' 'haiku')
 case "$MODEL_CHOICE" in
-    "Haiku - RECOMMENDED for Home Assistant")
+    "haiku")
         CLAUDE_MODEL="claude-3-5-haiku-20241022"
         ;;
-    "Sonnet - More powerful and 4x cost")
+    "sonnet")
         CLAUDE_MODEL="sonnet"
         ;;
-    "Opus - Most powerful and up to 19x cost")
+    "opus")
         CLAUDE_MODEL="default"
         ;;
     *)
