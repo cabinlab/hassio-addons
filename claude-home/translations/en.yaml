@@ -1,12 +1,11 @@
 configuration:
   claude_model:
-    name: "🤖 Claude Model [IMPORTANT - COST IMPACT]"
-    description: "✅ Haiku - RECOMMENDED for HA • 🟡 Sonnet: 4x cost • 🔴 Default/Opus: up to 19x cost"
+    name: "Claude Model [IMPORTANT - COST IMPACT]"
+    description: "Choose the AI model based on your needs and budget"
     options:
-      claude-3-5-haiku-20241022: "✅ Haiku (RECOMMENDED) - 5x cheaper than Sonnet, perfect for HA tasks"
-      sonnet: "⚡ Sonnet - Balanced performance (baseline cost)"
-      default: "⚠️ Default - Starts with Opus (WARNING: Up to 5x more expensive)"
-      opus: "💰 Opus - Most powerful (WARNING: 5x more expensive than Sonnet)"
+      claude-3-5-haiku-20241022: "Haiku - RECOMMENDED for Home Assistant"
+      sonnet: "Sonnet - More powerful and 4x cost"
+      default: "Opus - Most powerful and up to 19x cost"
 
   theme:
     name: "🎨 Terminal Theme"
@@ -16,6 +15,7 @@ configuration:
       light: "☀️ Light - Classic bright terminal"
       system: "🖥️ System - Match your device theme"
       high-contrast: "🔍 High Contrast - Enhanced visibility"
+      auto: "🌓 Auto - Automatically switch based on time of day"
 
   auto_claude:
     name: "🚀 Auto-Start Claude"
