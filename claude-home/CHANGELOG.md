@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.4.14 - 2025-01-06
+
+### Critical Fixes
+- **FIXED: Model selection bug** - Claude now correctly uses configured model (Haiku) instead of defaulting to Opus (60x cost savings!)
+  - Settings.json now created at correct location: `~/.claude/settings.json`
+  - Environment variable properly persisted to terminal session
+  - Explicit --model parameter used when auto-starting Claude
+- **FIXED: Authentication detection** - Reliable auth status checking
+  - Now checks correct auth file location: `~/.config/claude/auth.json`
+  - Uses --no-update-check flag to avoid timeout issues
+  - Properly distinguishes between missing and invalid credentials
+- **FIXED: BusyBox compatibility** - Claude auth now works properly
+  - Created wrapper script to bypass env -S issue
+  - Dynamically finds Claude CLI in npx cache
+  - Transparent replacement via symlink
+
+### Improvements
+- Model information displayed in terminal header
+- Increased auth check timeout for reliability
+- Better logging of authentication status
+
+### Technical Details
+- Wrapper installed at `/usr/local/bin/claude`
+- Settings created in both locations for compatibility
+- Auth checks multiple credential locations with fallbacks
+
 ## 1.4.0 - 2025-06-06
 
 **Home Assistant Context Integration**
