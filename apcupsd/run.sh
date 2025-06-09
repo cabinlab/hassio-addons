@@ -124,16 +124,22 @@ if [[ -n "$DEVICE" ]]; then
     sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE $sanitized_device/g" $UPS_CONFIG_PATH
     bashio::log.info "Device set to: $DEVICE"
 else
-    # Try to set a specific HID device for USB UPS
+    # Try to set a specific device for UPS
     if [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev0" ]]; then
         sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
         bashio::log.info "Device set to: /dev/usb/hiddev0 (auto-detected HID device)"
     elif [[ "$TYPE" == "usb" && -e "/dev/usb/hiddev1" ]]; then
         sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
         bashio::log.info "Device set to: /dev/usb/hiddev1 (auto-detected HID device)"
+    elif [[ "$TYPE" == "apcsmart" && -e "/dev/usb/hiddev0" ]]; then
+        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+        bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID)"
+    elif [[ "$TYPE" == "apcsmart" && -e "/dev/usb/hiddev1" ]]; then
+        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+        bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID)"
     else
         sed -i "s/^#\?DEVICE\( .*\)\?\$//g" $UPS_CONFIG_PATH
-        bashio::log.info "Device auto-detection enabled (no specific HID device found)"
+        bashio::log.info "Device auto-detection enabled (no specific device found)"
     fi
 fi
 
