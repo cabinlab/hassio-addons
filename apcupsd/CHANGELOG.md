@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.19] - 2025-01-08
+
+### 🔧 PERMISSIONS FIX: Device Access Rights
+- **Device Permissions Fix**: Automatically fix hiddev device permissions before daemon startup
+- **Root Cause Resolution**: Address device permission issues that prevent daemon communication
+- **Comprehensive Fix**: Fix permissions for both specific devices and all hiddev devices
+- **Enhanced Logging**: Show device permissions before and after fix attempts
+- **Targeted Solution**: Based on analysis showing consistent permission issues in logs
+
+### Technical Details
+- Change device permissions from 600 (crw-------) to 666 (crw-rw-rw-)
+- Ensure proper ownership (root:root) for all hiddev devices
+- Fix permissions for specific DEVICE setting and all /dev/usb/hiddev* devices
+- This addresses the consistent "Device permissions issue" warnings in logs
+
+**This should resolve the core permissions barrier preventing daemon UPS communication!**
+
 ## [2.0.18] - 2025-01-08
 
 ### 🔧 TARGETED FIX: apctest vs Daemon Device Discovery Gap

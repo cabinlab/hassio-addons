@@ -320,6 +320,24 @@ if [[ -n $(grep "^DEVICE" $UPS_CONFIG_PATH | cut -d' ' -f2) ]]; then
     fi
 fi
 
+# Fix device permissions before starting daemon
+device_path=$(grep "^DEVICE" $UPS_CONFIG_PATH | cut -d' ' -f2)
+if [[ -n "$device_path" && -e "$device_path" ]]; then
+    bashio::log.info "Fixing permissions for device: $device_path"
+    chmod 666 "$device_path" || bashio::log.warning "Could not change device permissions"
+    chown root:root "$device_path" || bashio::log.warning "Could not change device ownership"
+    bashio::log.info "Device permissions after fix: $(ls -la $device_path)"
+fi
+
+# Also ensure hiddev devices are accessible if they exist
+for hiddev in /dev/usb/hiddev*; do
+    if [[ -e "$hiddev" ]]; then
+        bashio::log.info "Fixing permissions for HID device: $hiddev"
+        chmod 666 "$hiddev" || bashio::log.warning "Could not change $hiddev permissions"
+        chown root:root "$hiddev" || bashio::log.warning "Could not change $hiddev ownership"
+    fi
+done
+
 # Start daemon with additional debugging
 bashio::log.info "Starting apcupsd daemon in debug mode..."
 /sbin/apcupsd -b -d 10 &
