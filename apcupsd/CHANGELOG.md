@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.15] - 2025-01-08
+
+### Enhanced
+- **Advanced Communication Testing**: Enhanced device testing to verify actual UPS communication before startup
+- **Smart Cable Auto-Detection**: Automatically tests smart cable configuration if standard methods fail
+- **Real UPS Response Validation**: Uses apctest with actual query commands to verify device compatibility
+- **Intelligent Configuration Switching**: Automatically suggests and tests smart cable configuration
+- **Enhanced Debugging Output**: Shows actual UPS response data during device testing
+
+### Technical Improvements
+- Replaced basic apctest existence check with actual UPS communication testing
+- Added smart cable configuration fallback for devices that need specific cable settings
+- Enhanced device testing with UPS response validation and detailed logging
+- Improved configuration recommendations based on actual device response testing
+
 ## [2.0.14] - 2025-01-08
 
 ### Enhanced

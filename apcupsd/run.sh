@@ -147,14 +147,17 @@ else
             bashio::log.info "Testing /dev/usb/hiddev0 for apcsmart compatibility..."
             sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
             
-            # Quick test with apctest if available
+            # Test actual UPS communication with a simple status query
             if command -v apctest &> /dev/null; then
-                # Test device access (this doesn't start the daemon)
-                if timeout 3 bash -c "echo '1' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -q 'View' || true"; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - tested)"
+                # Try to get basic UPS status using smart protocol
+                test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
+                if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - communication verified)"
+                    bashio::log.info "UPS Response: $test_output"
                     device_set=true
                 else
-                    bashio::log.info "hiddev0 test failed, trying hiddev1..."
+                    bashio::log.info "hiddev0 communication test failed, trying hiddev1..."
+                    bashio::log.info "Test output: $test_output"
                 fi
             else
                 # Fallback to basic file access test
@@ -171,11 +174,32 @@ else
             sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
             
             if command -v apctest &> /dev/null; then
-                if timeout 3 bash -c "echo '1' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -q 'View' || true"; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - tested)"
+                test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
+                if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
+                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - communication verified)"
+                    bashio::log.info "UPS Response: $test_output"
                     device_set=true
                 else
-                    bashio::log.warning "Both hiddev0 and hiddev1 failed apctest - using hiddev1 as fallback"
+                    bashio::log.warning "Both hiddev0 and hiddev1 failed communication test with apcsmart"
+                    bashio::log.info "hiddev1 test output: $test_output"
+                    
+                    # Try smart cable configuration as final attempt
+                    bashio::log.info "Trying smart cable configuration as last resort..."
+                    sed -i "s/^#\?UPSCABLE\( .*\)\?\$/UPSCABLE smart/g" $UPS_CONFIG_PATH
+                    
+                    # Test with smart cable configuration
+                    test_output_smart=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
+                    if [[ -n "$test_output_smart" && ! "$test_output_smart" =~ "COMMLOST" ]]; then
+                        bashio::log.info "SUCCESS: Smart cable configuration works on hiddev1!"
+                        bashio::log.info "UPS Response with smart cable: $test_output_smart"
+                        bashio::log.info "RECOMMENDATION: Change Cable Type to 'smart' in add-on configuration"
+                    else
+                        bashio::log.info "Smart cable test output: $test_output_smart"
+                        # Revert to original cable setting
+                        sed -i "s/^#\?UPSCABLE\( .*\)\?\$/UPSCABLE $CABLE/g" $UPS_CONFIG_PATH
+                    fi
+                    
+                    device_set=true  # Still set to avoid no device
                 fi
             else
                 if [[ -r "/dev/usb/hiddev1" && -w "/dev/usb/hiddev1" ]]; then
