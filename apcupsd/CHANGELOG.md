@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.17] - 2025-01-08
+
+### 🔧 CRITICAL FIX: USB Device Configuration
+- **Blank Device Setting**: Implement apcupsd best practice of leaving DEVICE blank for USB connections
+- **Auto-Detection Priority**: For USB and apcsmart+USB, try blank device first before specific paths  
+- **Follows Documentation**: Aligns with official apcupsd guidance that USB devices should auto-detect
+- **Permissions Fix**: Resolves device permission issues by letting apcupsd handle USB detection
+- **Research-Based Solution**: Implements fix discovered from apcupsd community troubleshooting
+
+### Technical Changes
+- USB type: Always use blank DEVICE setting for auto-detection
+- apcsmart+USB: Try blank device first, fallback to specific paths if needed
+- Improved logging to show when using auto-detection vs specific device paths
+- Based on extensive research showing COMMLOST issues caused by explicit device paths
+
+**This should resolve the persistent COMMLOST communication issues!**
+
 ## [2.0.16] - 2025-01-08
 
 ### Enhanced Debugging

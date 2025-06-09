@@ -124,87 +124,75 @@ if [[ -n "$DEVICE" ]]; then
     sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE $sanitized_device/g" $UPS_CONFIG_PATH
     bashio::log.info "Device set to: $DEVICE"
 else
-    # Enhanced device auto-detection with preference testing
+    # Enhanced device auto-detection following apcupsd best practices
     device_set=false
     
     if [[ "$TYPE" == "usb" ]]; then
-        # For USB type, prefer hiddev0 then hiddev1
-        if [[ -e "/dev/usb/hiddev0" ]]; then
-            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
-            bashio::log.info "Device set to: /dev/usb/hiddev0 (auto-detected HID device)"
-            device_set=true
-        elif [[ -e "/dev/usb/hiddev1" ]]; then
-            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
-            bashio::log.info "Device set to: /dev/usb/hiddev1 (auto-detected HID device)"
-            device_set=true
-        fi
+        # For USB type, leave DEVICE blank per apcupsd documentation
+        # apcupsd will auto-detect USB devices when DEVICE is empty
+        sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE/g" $UPS_CONFIG_PATH
+        bashio::log.info "Device set to: (blank - USB auto-detection enabled)"
+        bashio::log.info "Following apcupsd best practice: USB devices auto-detected when DEVICE is blank"
+        device_set=true
     elif [[ "$TYPE" == "apcsmart" ]]; then
-        # For apcsmart, test both devices and use the one that works
-        bashio::log.info "Testing apcsmart device compatibility..."
-        
-        # Test hiddev0 first
-        if [[ -e "/dev/usb/hiddev0" ]]; then
-            bashio::log.info "Testing /dev/usb/hiddev0 for apcsmart compatibility..."
-            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+        # For apcsmart with USB connection, also try blank device first
+        if [[ "$CABLE" == "smart" ]] || [[ "$CABLE" == "usb" ]]; then
+            bashio::log.info "Testing apcsmart with USB - trying blank device first (apcupsd best practice)..."
+            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE/g" $UPS_CONFIG_PATH
             
-            # Test actual UPS communication with a simple status query
+            # Test with blank device
             if command -v apctest &> /dev/null; then
-                # Try to get basic UPS status using smart protocol
                 test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
                 if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - communication verified)"
+                    bashio::log.info "SUCCESS: apcsmart works with blank device (auto-detection)!"
                     bashio::log.info "UPS Response: $test_output"
                     device_set=true
                 else
-                    bashio::log.info "hiddev0 communication test failed, trying hiddev1..."
+                    bashio::log.info "Blank device test failed, trying specific device paths..."
                     bashio::log.info "Test output: $test_output"
-                fi
-            else
-                # Fallback to basic file access test
-                if [[ -r "/dev/usb/hiddev0" && -w "/dev/usb/hiddev0" ]]; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - accessible)"
-                    device_set=true
                 fi
             fi
         fi
         
-        # Test hiddev1 if hiddev0 failed or doesn't exist
-        if [[ "$device_set" == "false" && -e "/dev/usb/hiddev1" ]]; then
-            bashio::log.info "Testing /dev/usb/hiddev1 for apcsmart compatibility..."
-            sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+        # If blank device failed, try specific device paths
+        if [[ "$device_set" == "false" ]]; then
+            bashio::log.info "Testing apcsmart with specific device paths..."
             
-            if command -v apctest &> /dev/null; then
-                test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
-                if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - communication verified)"
-                    bashio::log.info "UPS Response: $test_output"
-                    device_set=true
-                else
-                    bashio::log.warning "Both hiddev0 and hiddev1 failed communication test with apcsmart"
-                    bashio::log.info "hiddev1 test output: $test_output"
-                    
-                    # Try smart cable configuration as final attempt
-                    bashio::log.info "Trying smart cable configuration as last resort..."
-                    sed -i "s/^#\?UPSCABLE\( .*\)\?\$/UPSCABLE smart/g" $UPS_CONFIG_PATH
-                    
-                    # Test with smart cable configuration
-                    test_output_smart=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
-                    if [[ -n "$test_output_smart" && ! "$test_output_smart" =~ "COMMLOST" ]]; then
-                        bashio::log.info "SUCCESS: Smart cable configuration works on hiddev1!"
-                        bashio::log.info "UPS Response with smart cable: $test_output_smart"
-                        bashio::log.info "RECOMMENDATION: Change Cable Type to 'smart' in add-on configuration"
+            # Test hiddev0 first
+            if [[ -e "/dev/usb/hiddev0" ]]; then
+                bashio::log.info "Testing /dev/usb/hiddev0 for apcsmart compatibility..."
+                sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev0/g" $UPS_CONFIG_PATH
+                
+                # Test actual UPS communication with a simple status query
+                if command -v apctest &> /dev/null; then
+                    test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
+                    if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
+                        bashio::log.info "Device set to: /dev/usb/hiddev0 (apcsmart via USB HID - communication verified)"
+                        bashio::log.info "UPS Response: $test_output"
+                        device_set=true
                     else
-                        bashio::log.info "Smart cable test output: $test_output_smart"
-                        # Revert to original cable setting
-                        sed -i "s/^#\?UPSCABLE\( .*\)\?\$/UPSCABLE $CABLE/g" $UPS_CONFIG_PATH
+                        bashio::log.info "hiddev0 communication test failed, trying hiddev1..."
+                        bashio::log.info "Test output: $test_output"
                     fi
-                    
-                    device_set=true  # Still set to avoid no device
                 fi
-            else
-                if [[ -r "/dev/usb/hiddev1" && -w "/dev/usb/hiddev1" ]]; then
-                    bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - accessible)"
-                    device_set=true
+            fi
+            
+            # Test hiddev1 if hiddev0 failed
+            if [[ "$device_set" == "false" && -e "/dev/usb/hiddev1" ]]; then
+                bashio::log.info "Testing /dev/usb/hiddev1 for apcsmart compatibility..."
+                sed -i "s/^#\?DEVICE\( .*\)\?\$/DEVICE \/dev\/usb\/hiddev1/g" $UPS_CONFIG_PATH
+                
+                if command -v apctest &> /dev/null; then
+                    test_output=$(timeout 5 bash -c "echo -e 'Y\nQ\n' | apctest -f /etc/apcupsd/apcupsd.conf 2>/dev/null | grep -E '(Smart|Status|Model)' | head -3" || echo "")
+                    if [[ -n "$test_output" && ! "$test_output" =~ "COMMLOST" ]]; then
+                        bashio::log.info "Device set to: /dev/usb/hiddev1 (apcsmart via USB HID - communication verified)"
+                        bashio::log.info "UPS Response: $test_output"
+                        device_set=true
+                    else
+                        bashio::log.warning "Both blank device and specific paths failed for apcsmart"
+                        bashio::log.info "hiddev1 test output: $test_output"
+                        device_set=true  # Still set to avoid no device
+                    fi
                 fi
             fi
         fi
