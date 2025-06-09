@@ -99,30 +99,8 @@ EOF
 # Install required tools
 install_tools() {
     bashio::log.info "Installing additional tools..."
-    apk add --no-cache ttyd curl
-}
-
-# Install claude command to provide CLI access
-install_claude_wrapper() {
-    bashio::log.info "Installing Claude command for CLI access..."
-    
-    # Simple npx-based command until v2.0.0 clean container
-    cat > /usr/local/bin/claude << 'WRAPPER_EOF'
-#!/bin/bash
-# Temporary claude command for full CLI access
-# This provides access to all CLI options: --help, --resume, --model, etc.
-
-# Ensure model is set from config
-if [ -f /data/options.json ]; then
-    export ANTHROPIC_MODEL=$(jq -r '.claude_model // "claude-3-5-haiku-20241022"' /data/options.json 2>/dev/null || echo "claude-3-5-haiku-20241022")
-fi
-
-# Use npx to run Claude Code CLI with all arguments passed through
-exec npx -y @anthropic-ai/claude-code "$@"
-WRAPPER_EOF
-    
-    chmod +x /usr/local/bin/claude
-    bashio::log.info "Claude wrapper installed successfully"
+    # ttyd is likely already in Debian base, but let's ensure it
+    apt-get update && apt-get install -y ttyd && rm -rf /var/lib/apt/lists/*
 }
 
 # Setup credential management and security scripts
@@ -670,7 +648,6 @@ main() {
     
     init_environment
     install_tools
-    install_claude_wrapper
     setup_security_scripts
     apply_security_policies
     apply_app_security

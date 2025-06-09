@@ -1,10 +1,9 @@
 build_from:
-  aarch64: ghcr.io/home-assistant/aarch64-base:3.19
-  amd64: ghcr.io/home-assistant/amd64-base:3.19
-  armv7: ghcr.io/home-assistant/armv7-base:3.19
+  aarch64: ghcr.io/hassio-addons/debian-base:7.8.3
+  amd64: ghcr.io/hassio-addons/debian-base:7.8.3
 
 labels:
-  org.opencontainers.image.title: "Cabin Assistant add-on: Claude Home"
+  org.opencontainers.image.title: "Claude Home"
   org.opencontainers.image.description: "AI-powered terminal interface with Claude Code CLI"
-  org.opencontainers.image.source: "https://github.com/anthropics/claude-code"
+  org.opencontainers.image.source: "https://github.com/cabinlab/hassio-addons"
   org.opencontainers.image.licenses: "MIT"

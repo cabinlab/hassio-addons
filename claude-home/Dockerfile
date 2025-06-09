@@ -1,30 +1,29 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install packages in a single layer to minimize image size
-RUN apk add --no-cache \
+# Install Node.js and npm (Debian way)
+RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
-    bash \
-    curl \
-    nano \
     git \
-    openssh-client \
-    vim \
-    less \
-    tree \
-    && npm install -g @anthropic-ai/claude-code \
-    && npm cache clean --force
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create directory for Claude configuration and set working directory
-RUN mkdir -p /config/claude-config
-WORKDIR /config
+# Install Claude Code globally - it just works on Debian!
+RUN npm install -g @anthropic-ai/claude-code
 
-# Copy startup script and modular scripts
-COPY run.sh /run.sh
-COPY scripts/ /config/scripts/
-RUN chmod +x /run.sh \
-    && chmod +x /config/scripts/*.sh
+# Copy run script
+COPY run.sh /
 
-# Use exec form for better signal handling
-CMD ["/run.sh"]
+# Labels
+LABEL \
+    io.hass.name="Claude Home" \
+    io.hass.description="AI-powered terminal interface with Claude Code CLI" \
+    io.hass.arch="aarch64|amd64" \
+    io.hass.type="addon" \
+    io.hass.version=${BUILD_VERSION} \
+    maintainer="Cabin Lab"
+
+# S6 and bashio are already in the base image!
+# No BusyBox issues!
+# No wrapper needed!
