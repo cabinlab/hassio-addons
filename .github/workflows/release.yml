@@ -1,0 +1,75 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 2.0.0)'
+        required: true
+      title:
+        description: 'Release title'
+        required: true
+        default: 'Claude Home Release'
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          # Extract the changelog section for this version
+          VERSION="${{ github.event.inputs.version }}"
+          CHANGELOG_FILE="claude-home/CHANGELOG.md"
+          
+          if [ -f "$CHANGELOG_FILE" ]; then
+            # Extract content between this version and the next version header
+            CONTENT=$(awk "/^## $VERSION/{flag=1; next} /^## [0-9]/{flag=0} flag" "$CHANGELOG_FILE")
+            
+            if [ -z "$CONTENT" ]; then
+              CONTENT="See CHANGELOG.md for details"
+            fi
+            
+            # GitHub Actions multiline string handling
+            echo "content<<EOF" >> $GITHUB_OUTPUT
+            echo "$CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "content=No changelog found" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: ${{ github.event.inputs.title }} v${{ github.event.inputs.version }}
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.content }}
+            
+            ## Container Image
+            ```bash
+            docker pull ghcr.io/cabinlab/claude-home:${{ github.event.inputs.version }}
+            ```
+            
+            ## Home Assistant Add-on
+            The add-on will automatically use the new container version once the build workflow completes.
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+
+      - name: Trigger container build
+        run: |
+          echo "Release created. The container build will trigger automatically for the new tag."

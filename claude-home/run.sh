@@ -98,9 +98,10 @@ EOF
 
 # Install required tools
 install_tools() {
-    bashio::log.info "Installing additional tools..."
-    # ttyd is likely already in Debian base, but let's ensure it
-    apt-get update && apt-get install -y ttyd && rm -rf /var/lib/apt/lists/*
+    bashio::log.info "Checking installed tools..."
+    # Everything should be installed in Dockerfile now
+    which ttyd || bashio::log.error "ttyd not found!"
+    which claude || bashio::log.error "claude not found!"
 }
 
 # Setup credential management and security scripts
@@ -644,20 +645,45 @@ EOF
 
 # Main execution
 main() {
-    bashio::log.info "Initializing Claude Home add-on with enhanced security..."
+    bashio::log.info "Initializing Claude Home add-on..."
     
+    bashio::log.info "Step 1: init_environment"
     init_environment
+    
+    bashio::log.info "Step 2: install_tools"
     install_tools
+    
+    bashio::log.info "Step 3: setup_security_scripts"
     setup_security_scripts
+    
+    bashio::log.info "Step 4: apply_security_policies"
     apply_security_policies
+    
+    bashio::log.info "Step 5: apply_app_security"
     apply_app_security
+    
+    bashio::log.info "Step 6: setup_filesystem_security"
     setup_filesystem_security
+    
+    bashio::log.info "Step 7: start_activity_monitoring"
     start_activity_monitoring
+    
+    bashio::log.info "Step 8: verify_security_integration"
     verify_security_integration
+    
+    bashio::log.info "Step 9: setup_clean_credentials"
     setup_clean_credentials
+    
+    bashio::log.info "Step 10: check_claude_auth"
     check_claude_auth
+    
+    bashio::log.info "Step 11: start_credential_service"
     start_credential_service
+    
+    bashio::log.info "Step 12: setup_context_integration"
     setup_context_integration
+    
+    bashio::log.info "Step 13: start_web_terminal"
     start_web_terminal
 }
 

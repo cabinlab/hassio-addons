@@ -1,12 +1,13 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install Node.js and npm (Debian way)
+# Install Node.js, npm, and ttyd (Debian way)
 RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     git \
     curl \
+    ttyd \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code globally - it just works on Debian!
