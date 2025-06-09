@@ -430,7 +430,7 @@ setup_claude_wrapper() {
     fi
     
     # Create a Node.js wrapper for Claude CLI to bypass BusyBox env issues
-    cat > /usr/local/bin/claude << 'EOF'
+    cat > /usr/local/bin/hiclaude << 'EOF'
 #!/bin/bash
 # Claude CLI wrapper to handle BusyBox compatibility issues
 
@@ -446,7 +446,7 @@ fi
 exec node "$CLAUDE_BIN" "$@"
 EOF
 
-    chmod +x /usr/local/bin/claude
+    chmod +x /usr/local/bin/hiclaude
 }
 
 # Check Claude authentication status
@@ -555,7 +555,7 @@ start_web_terminal() {
 check_claude_auth() {
     if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
        [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
-        if timeout 3 claude --version >/dev/null 2>&1; then
+        if timeout 3 hiclaude --version >/dev/null 2>&1; then
             export CLAUDE_AUTH_STATUS="authenticated"
         else
             export CLAUDE_AUTH_STATUS="invalid"
@@ -591,20 +591,20 @@ show_terminal_header() {
     
     case "$CLAUDE_AUTH_STATUS" in
         "authenticated")
-            echo "                      ${GREEN}***** Authenticated *****${RESET}"
+            echo -e "                ${GREEN}***** Authenticated *****${RESET}"
             echo ""
             if [ "$auto_claude_setting" = "true" ]; then
-                echo "                        Auto-starting Claude..."
+                echo "                  Auto-starting Claude..."
                 sleep 1
-                exec claude
+                exec hiclaude
             else
-                echo "                   Run 'claude' to start, or 'claude --help' for options"
+                echo "             Run 'hiclaude' to start, or 'claude auth' to authenticate"
             fi
             ;;
         *)
-            echo "                    ${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
+            echo -e "              ${BRIGHT_ORANGE}¡¡¡¡¡ You get to login again !!!!!${RESET}"
             echo ""
-            echo "                       Run 'claude auth' to authenticate"
+            echo "                 Run 'claude auth' to authenticate"
             ;;
     esac
     echo ""
