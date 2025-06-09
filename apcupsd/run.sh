@@ -238,8 +238,21 @@ if pgrep apcupsd > /dev/null; then
         bashio::log.info "UPS Status: $ups_status"
         
         if [[ "$ups_status" == "COMMLOST" ]]; then
-            bashio::log.warning "UPS communication lost - checking apcupsd logs..."
-            tail -20 /var/log/messages 2>/dev/null || bashio::log.warning "No syslog available"
+            bashio::log.warning "UPS communication lost - detailed debugging..."
+            bashio::log.info "Current apcupsd configuration:"
+            grep -E "^(UPSCABLE|UPSTYPE|DEVICE)" /etc/apcupsd/apcupsd.conf || bashio::log.warning "Cannot read apcupsd config"
+            bashio::log.info "Testing device access:"
+            ls -la /dev/usb/hiddev0 2>/dev/null || bashio::log.warning "hiddev0 not accessible"
+            ls -la /dev/usb/hiddev1 2>/dev/null || bashio::log.warning "hiddev1 not accessible" 
+            bashio::log.info "Full apcaccess output:"
+            apcaccess status 2>&1 | head -10 || bashio::log.warning "Cannot get apcaccess status"
+            
+            # Try alternative configuration for smart UPS
+            if [[ "$CABLE" == "usb" && "$TYPE" == "usb" ]]; then
+                bashio::log.info "Trying smart cable configuration as fallback..."
+                bashio::log.info "SUGGESTION: Try changing Cable Type to 'smart' and Communication Protocol to 'apcsmart' in add-on config"
+                bashio::log.info "Some APC UPS devices need smart cable configuration even when connected via USB"
+            fi
         fi
     else
         bashio::log.warning "✗ apcaccess cannot connect to daemon"
