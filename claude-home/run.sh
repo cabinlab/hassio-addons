@@ -6,17 +6,9 @@ init_environment() {
     mkdir -p /config/claude-config
     chmod 777 /config/claude-config
 
-    # Create links between credential locations and our persistent directory
+    # Simple credential directory setup without complex linking
     mkdir -p /root/.config
-    ln -sf /config/claude-config /root/.config/anthropic
-
-    # Link the found credential files to our persistent directory
-    if [ -f "/config/claude-config/.claude" ]; then
-        ln -sf /config/claude-config/.claude /root/.claude
-    fi
-    if [ -f "/config/claude-config/.claude.json" ]; then
-        ln -sf /config/claude-config/.claude.json /root/.claude.json
-    fi
+    mkdir -p /root/.config/anthropic
 
     # Set environment variables
     export CLAUDE_CREDENTIALS_DIRECTORY="/config/claude-config"
@@ -422,31 +414,22 @@ EOF
     fi
 }
 
-# Setup credential management and Claude wrapper
-setup_claude_wrapper() {
-    # Backup original claude command and create wrapper
-    if [ -f "/usr/local/bin/claude" ]; then
-        mv /usr/local/bin/claude /usr/local/bin/claude-original
+# Clean up credential state and restore original Claude CLI
+setup_clean_credentials() {
+    # Remove any stale credential files that might be causing issues
+    bashio::log.info "Cleaning up potentially stale credential files..."
+    rm -f /config/claude-config/.claude*
+    rm -f /root/.claude*
+    rm -rf /root/.config/anthropic
+    
+    # Restore original Claude CLI if we backed it up
+    if [ -f "/usr/local/bin/claude-original" ]; then
+        mv /usr/local/bin/claude-original /usr/local/bin/claude
+        bashio::log.info "Restored original Claude CLI"
     fi
     
-    # Create a Node.js wrapper for Claude CLI to bypass BusyBox env issues
-    cat > /usr/local/bin/hiclaude << 'EOF'
-#!/bin/bash
-# Claude CLI wrapper to handle BusyBox compatibility issues
-
-CLAUDE_BIN="/usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"
-
-if [ ! -f "$CLAUDE_BIN" ]; then
-    echo "ERROR: Could not find Claude CLI binary at $CLAUDE_BIN"
-    echo "Expected location: /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"
-    exit 1
-fi
-
-# Execute Claude directly with Node.js to avoid env -S issues
-exec node "$CLAUDE_BIN" "$@"
-EOF
-
-    chmod +x /usr/local/bin/hiclaude
+    # Remove any wrapper we created
+    rm -f /usr/local/bin/hiclaude
 }
 
 # Check Claude authentication status
@@ -553,13 +536,9 @@ start_web_terminal() {
 # Claude Home functions
 
 check_claude_auth() {
-    if [ -f "/config/claude-config/.claude" ] || [ -f "/config/claude-config/.claude.json" ] || 
-       [ -f "/root/.claude" ] || [ -f "/root/.claude.json" ]; then
-        if timeout 3 hiclaude --version >/dev/null 2>&1; then
-            export CLAUDE_AUTH_STATUS="authenticated"
-        else
-            export CLAUDE_AUTH_STATUS="invalid"
-        fi
+    # Simplified auth check - just test if claude works
+    if timeout 3 claude --version >/dev/null 2>&1; then
+        export CLAUDE_AUTH_STATUS="authenticated"
     else
         export CLAUDE_AUTH_STATUS="missing"
     fi
@@ -596,9 +575,9 @@ show_terminal_header() {
             if [ "$auto_claude_setting" = "true" ]; then
                 echo "                  Auto-starting Claude..."
                 sleep 1
-                exec hiclaude
+                exec claude
             else
-                echo "             Run 'hiclaude' to start, or 'claude auth' to authenticate"
+                echo "             Run 'claude' to start, or 'claude --help' for options"
             fi
             ;;
         *)
@@ -631,7 +610,7 @@ main() {
     setup_filesystem_security
     start_activity_monitoring
     verify_security_integration
-    setup_claude_wrapper
+    setup_clean_credentials
     check_claude_auth
     start_credential_service
     setup_context_integration
