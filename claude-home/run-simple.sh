@@ -256,16 +256,27 @@ echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  
 echo -e "\${RESET}"
 echo ""
 
-# Check if authenticated
-# Important: Claude Code OAuth sessions don't survive container restarts
-# Even with credential files, a new container always needs fresh auth
+# Check if authenticated by seeing if claude works without prompting for auth
+# We'll use a simple test that should fail quickly if not authenticated
 AUTH_FOUND=false
 
-# Since we can't reliably detect auth state after container restart,
-# and we know credentials don't work across containers, always show
-# the accurate state on container start
-# The only exception would be if someone re-enters the terminal in the
-# same container session after authenticating
+# Check if credentials file exists
+if [ -f "/config/claude-config/.claude/.credentials.json" ] || [ -f "/root/.claude/.credentials.json" ]; then
+    # Try to run claude with a timeout to see if it prompts for auth
+    # If it exits with code 1, it likely needs auth
+    # If it starts successfully (code 0 or timeout), auth is probably valid
+    if timeout 2 claude --help 2>&1 | grep -q "login\\|auth\\|authenticate"; then
+        # Claude is prompting for auth
+        AUTH_FOUND=false
+    else
+        # Claude started without auth prompt - might be authenticated
+        # This isn't perfect but better than always showing false
+        AUTH_FOUND=true
+    fi
+else
+    # No credentials file at all
+    AUTH_FOUND=false
+fi
 
 if [ "\$AUTH_FOUND" = "true" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
@@ -275,19 +286,15 @@ if [ "\$AUTH_FOUND" = "true" ]; then
 else
     # Check if we have stored credentials that aren't working
     if [ -f "/config/claude-config/.claude/.credentials.json" ]; then
-        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Stored credentials need refresh !!!!!\${RESET}"
+        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Authentication needed !!!!!\${RESET}"
         echo ""
-        echo "             Credentials found but not valid after restart"
-        echo "             Run 'claude auth' to re-authenticate"
-        echo ""
-        echo "             Debug: check-auth | Try: restore-auth"
+        echo "             Previous session expired (container restarted)"
+        echo "             Run 'claude' to start"
     else
-        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Not authenticated yet !!!!!\${RESET}"
+        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Welcome to Claude Home !!!!!\${RESET}"
         echo ""
-        echo "             Run 'claude auth' to authenticate"
+        echo "             Run 'claude' to get started"
     fi
-    echo ""
-    echo "             Rollback: See /ROLLBACK.md if needed"
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
