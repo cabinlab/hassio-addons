@@ -4,11 +4,20 @@
 
 bashio::log.info "Claude Home starting..."
 
-# Create settings directory
-mkdir -p /root/.claude
+# Create settings directory and move existing .claude if it exists
+if [ -d /root/.claude ] && [ ! -L /root/.claude ]; then
+    bashio::log.info "Moving existing .claude directory to persistent storage"
+    cp -r /root/.claude /config/claude-config/
+    rm -rf /root/.claude
+fi
+
+mkdir -p /config/claude-config/.claude
 mkdir -p /config/claude-config
 
-# Create persistent auth storage
+# Create symlink for .claude directory (where auth is actually stored!)
+ln -sf /config/claude-config/.claude /root/.claude
+
+# Create persistent auth storage for other potential locations
 mkdir -p /config/claude-config/.config/claude
 mkdir -p /config/claude-config/.config/anthropic
 mkdir -p /root/.config
@@ -66,12 +75,12 @@ fi
 # Debug: Check various possible auth locations
 bashio::log.info "Checking for existing auth files..."
 for location in \
+    "/root/.claude.json" \
+    "/root/.claude/.claude.json" \
+    "/config/claude-config/.claude/.claude.json" \
     "/root/.config/claude/auth.json" \
-    "/root/.claude/auth.json" \
-    "/root/.anthropic/auth.json" \
     "/root/.config/anthropic/auth.json" \
-    "/config/claude-config/.config/claude/auth.json" \
-    "/config/claude-config/auth.json"; do
+    "/config/claude-config/.config/claude/auth.json"; do
     if [ -f "$location" ]; then
         bashio::log.info "Found auth file at: $location"
     fi
@@ -109,12 +118,17 @@ case "$MODEL_CHOICE" in
 esac
 export ANTHROPIC_MODEL="$CLAUDE_MODEL"
 
-# Create settings.json in correct location
-cat > /root/.claude/settings.json << EOF
+# Create settings.json in correct location (persistent)
+cat > /config/claude-config/.claude/settings.json << EOF
 {
   "model": "$CLAUDE_MODEL"
 }
 EOF
+
+# Also create in /root/.claude if it's a symlink
+if [ -L /root/.claude ]; then
+    bashio::log.info "Settings saved to persistent storage via symlink"
+fi
 
 bashio::log.info "Model set to: $CLAUDE_MODEL"
 
@@ -204,19 +218,11 @@ echo -e "\${RESET}"
 echo ""
 
 # Check if authenticated by looking for Claude credential files
-# Debug: Show where we're looking
-echo "             Auth check: /config/claude-config/.config/claude/"
-
-# Check for any auth files in the persistent location
-AUTH_FOUND=false
-if [ -d "/config/claude-config/.config/claude" ]; then
-    for auth_file in /config/claude-config/.config/claude/*auth* /config/claude-config/.config/claude/.*auth*; do
-        if [ -f "\$auth_file" ]; then
-            AUTH_FOUND=true
-            echo "             Found: \$(basename "\$auth_file")"
-            break
-        fi
-    done 2>/dev/null
+# Claude Code stores auth in ~/.claude.json
+if [ -f "/config/claude-config/.claude/.claude.json" ] || [ -f "/root/.claude/.claude.json" ]; then
+    AUTH_FOUND=true
+else
+    AUTH_FOUND=false
 fi
 
 if [ "\$AUTH_FOUND" = "true" ]; then
@@ -269,8 +275,9 @@ cat > /usr/local/bin/check-auth << 'EOF'
 #!/bin/bash
 echo "=== Checking for Claude authentication files ==="
 echo ""
-echo "Searching in /root/.config/:"
-find /root/.config -name "*auth*" -o -name "*token*" -o -name "*credential*" 2>/dev/null | while read f; do
+
+echo "1. Searching ALL of /root for auth-related files:"
+find /root -type f \( -name "*auth*" -o -name "*token*" -o -name "*credential*" -o -name "*oauth*" \) 2>/dev/null | while read f; do
     echo "  Found: $f"
     if [ -L "$f" ]; then
         echo "    -> Symlink to: $(readlink -f "$f")"
@@ -278,14 +285,36 @@ find /root/.config -name "*auth*" -o -name "*token*" -o -name "*credential*" 2>/
 done
 
 echo ""
-echo "Searching in npm global:"
-find /usr/local/lib/node_modules -name "*auth*" -o -name "*token*" 2>/dev/null | head -10 | while read f; do
-    echo "  Found: $f"
+echo "2. Checking Claude Code config locations:"
+for dir in ~/.claude ~/.config/claude ~/.config/anthropic ~/.anthropic ~/.config/@anthropic-ai; do
+    if [ -d "$dir" ]; then
+        echo "  Directory exists: $dir"
+        ls -la "$dir" | head -5
+    fi
 done
 
 echo ""
-echo "Checking persistent storage:"
+echo "3. Checking npm config:"
+npm config list | grep -i auth
+npm config get userconfig
+if [ -f ~/.npmrc ]; then
+    echo "  .npmrc contents:"
+    cat ~/.npmrc | grep -v "^#"
+fi
+
+echo ""
+echo "4. Checking environment variables:"
+env | grep -i "claude\|anthropic\|auth" | grep -v TOKEN
+
+echo ""
+echo "5. Checking process list for Claude:"
+ps aux | grep -i claude | grep -v grep
+
+echo ""
+echo "6. Checking persistent storage:"
+echo "  /config/claude-config/.config/claude/:"
 ls -la /config/claude-config/.config/claude/ 2>/dev/null
+echo "  /config/claude-config/.config/anthropic/:"
 ls -la /config/claude-config/.config/anthropic/ 2>/dev/null
 EOF
 
