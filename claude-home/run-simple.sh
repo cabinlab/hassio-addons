@@ -13,12 +13,21 @@ mkdir -p /config/claude-config/.config/claude
 mkdir -p /root/.config
 
 # Remove existing directory/symlink if it exists
-if [ -e /root/.config/claude ]; then
+if [ -e /root/.config/claude ] || [ -L /root/.config/claude ]; then
+    bashio::log.info "Removing existing /root/.config/claude to create symlink"
     rm -rf /root/.config/claude
 fi
 
 # Create symlink for auth persistence
 ln -sf /config/claude-config/.config/claude /root/.config/claude
+
+# Ensure the symlink was created (not a directory)
+if [ -L /root/.config/claude ]; then
+    bashio::log.info "Symlink created successfully"
+elif [ -d /root/.config/claude ]; then
+    bashio::log.error "ERROR: /root/.config/claude is a directory, not a symlink!"
+    bashio::log.error "Something recreated it after we deleted it"
+fi
 
 # Verify symlink was created
 if [ -L /root/.config/claude ]; then
@@ -50,11 +59,18 @@ for location in \
     "/root/.config/claude/auth.json" \
     "/root/.claude/auth.json" \
     "/root/.anthropic/auth.json" \
+    "/root/.config/anthropic/auth.json" \
     "/config/claude-config/.config/claude/auth.json" \
     "/config/claude-config/auth.json"; do
     if [ -f "$location" ]; then
         bashio::log.info "Found auth file at: $location"
     fi
+done
+
+# Also search for any auth-related files
+bashio::log.info "Searching for auth-related files..."
+find /root -name "*auth*" -type f 2>/dev/null | while read file; do
+    bashio::log.info "Found auth-related file: $file"
 done
 
 # Get model from config and map to actual model ID
@@ -171,10 +187,21 @@ echo ""
 
 # Check if authenticated by looking for Claude credential files
 # Debug: Show where we're looking
-echo "             Auth check: /config/claude-config/.config/claude/auth.json"
+echo "             Auth check: /config/claude-config/.config/claude/"
 
-# Claude Code stores auth in ~/.config/claude/auth.json (now symlinked to persistent storage)
-if [ -f "/config/claude-config/.config/claude/auth.json" ]; then
+# Check for any auth files in the persistent location
+AUTH_FOUND=false
+if [ -d "/config/claude-config/.config/claude" ]; then
+    for auth_file in /config/claude-config/.config/claude/*auth* /config/claude-config/.config/claude/.*auth*; do
+        if [ -f "$auth_file" ]; then
+            AUTH_FOUND=true
+            echo "             Found: $(basename $auth_file)"
+            break
+        fi
+    done
+fi
+
+if [ "$AUTH_FOUND" = "true" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
     echo ""
     echo "             Run 'claude' to start an interactive session"
@@ -223,7 +250,7 @@ chmod +x /tmp/startup.sh
 
 # Configure MCP servers in the persistent location
 # This ensures Claude Code picks up the configuration
-mkdir -p /config/claude-config/.config/claude
+# Note: Directory already created above before symlink
 
 # Create project-level MCP configuration
 cat > /config/claude-config/.config/claude/.mcp.json << EOF
