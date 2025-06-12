@@ -71,6 +71,12 @@ if [ "$HA_NOTIFICATIONS" = "true" ]; then
     fi
 fi
 
+# Check for MCP availability early
+MCP_AVAILABLE="false"
+if bashio::api.supervisor GET /core/api/mcp false &>/dev/null 2>&1; then
+    MCP_AVAILABLE="true"
+fi
+
 # Create startup script with ASCII header
 cat > /tmp/startup.sh << EOF
 #!/bin/bash
@@ -82,6 +88,9 @@ AUTO_CLAUDE="$AUTO_CLAUDE"
 HA_NOTIFICATIONS="$HA_NOTIFICATIONS"
 NOTIFICATION_SERVICE="$NOTIFICATION_SERVICE"
 NOTIFY_SERVICES="$NOTIFY_SERVICES"
+
+# MCP status
+MCP_AVAILABLE="$MCP_AVAILABLE"
 
 # Colors
 CYAN='\\033[38;2;79;195;193m'
@@ -124,6 +133,13 @@ fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
 
+# Show MCP status
+if [ "\$MCP_AVAILABLE" = "true" ]; then
+    echo "             MCP: \${GREEN}Connected to Home Assistant\${RESET}"
+else
+    echo "             MCP: Not available"
+fi
+
 # Show notification settings if enabled
 if [ "\$HA_NOTIFICATIONS" = "true" ]; then
     echo ""
@@ -145,6 +161,33 @@ fi
 EOF
 
 chmod +x /tmp/startup.sh
+
+# Configure Home Assistant MCP if available
+if [ "$MCP_AVAILABLE" = "true" ]; then
+    bashio::log.info "Configuring Home Assistant MCP Server connection"
+    
+    # Get supervisor token for MCP access
+    MCP_TOKEN="${SUPERVISOR_TOKEN}"
+    MCP_URL="http://supervisor/core/api/mcp"
+    
+    # Create MCP configuration for Claude
+    mkdir -p /root/.config/claude
+    cat > /root/.config/claude/mcp-servers.json << EOF
+{
+  "homeassistant": {
+    "transport": "sse",
+    "url": "$MCP_URL",
+    "headers": {
+      "Authorization": "Bearer $MCP_TOKEN"
+    }
+  }
+}
+EOF
+    
+    bashio::log.info "MCP configuration created for Home Assistant"
+else
+    bashio::log.info "Home Assistant MCP Server not detected - using standard API"
+fi
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
