@@ -226,6 +226,17 @@ MCP_AVAILABLE="false"
 #     MCP_AVAILABLE="true"
 # fi
 
+# Get working directory before creating the startup script
+WORKING_DIR=$(bashio::config 'working_directory' '/config')
+
+# Create claude-workspace if that option is selected and it doesn't exist
+if [ "$WORKING_DIR" = "/config/claude-workspace" ] && [ ! -d "$WORKING_DIR" ]; then
+    mkdir -p "$WORKING_DIR"
+    echo "# Claude Workspace" > "$WORKING_DIR/README.md"
+    echo "This directory is for Claude Code projects and persistent memory." >> "$WORKING_DIR/README.md"
+    bashio::log.info "Created claude-workspace directory"
+fi
+
 # Create startup script with ASCII header
 cat > /tmp/startup.sh << EOF
 #!/bin/bash
@@ -233,8 +244,8 @@ cat > /tmp/startup.sh << EOF
 # Set Claude config directory to persistent storage
 export CLAUDE_CONFIG_DIR="/config/claude-config"
 
-# Change to a more appropriate working directory
-cd /root
+# Change to configured working directory
+cd "$WORKING_DIR"
 
 # Auto-start Claude setting
 AUTO_CLAUDE="$AUTO_CLAUDE"
@@ -315,6 +326,7 @@ else
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
+echo "             Working in: $WORKING_DIR"
 
 # Show MCP status
 if [ "\$MCP_AVAILABLE" = "true" ]; then
@@ -503,7 +515,7 @@ bashio::log.info "MCP configuration files created in persistent and project loca
 
 # Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
 # to properly link it to the memory system
-bashio::log.info "Working directory set to /root for Claude memory support"
+bashio::log.info "CLAUDE.md will be created in working directory: $WORKING_DIR"
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."

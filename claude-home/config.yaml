@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.0.21"
+version: "2.1.0"
 slug: "claude_home"
 init: false
 
@@ -39,6 +39,7 @@ options:
   context_integration: true
   context_domains: "climate,sensor,binary_sensor,light,switch,weather"
   context_max_entities: 100
+  working_directory: "/config"
 
 schema:
   claude_model: "list(haiku|sonnet|opus)"
@@ -53,6 +54,7 @@ schema:
   context_integration: "bool?"
   context_domains: "str?"
   context_max_entities: "int(10,500)?"
+  working_directory: "list(/config|/config/claude-workspace|/root|/config/custom_components)?"
 
 # Volume mapping for persistent storage
 map:
