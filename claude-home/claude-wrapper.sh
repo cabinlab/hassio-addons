@@ -34,27 +34,12 @@ case "$1" in
         if check_auth_needed; then
             echo "Checking stored credentials..."
             
-            # Try to extract and use token
-            if token=$(extract_token); then
-                # Try setting as env var (might help)
-                export ANTHROPIC_API_KEY="$token"
-                
-                # Give Claude a moment to recognize the env var
-                sleep 1
-                
-                # Try the command again
-                if timeout 2 /usr/local/bin/claude --version >/dev/null 2>&1; then
-                    echo "Restored authentication from stored credentials"
-                else
-                    echo "Stored credentials found but not recognized"
-                    echo "Please run 'claude auth' to re-authenticate"
-                    exit 1
-                fi
-            else
-                echo "No stored credentials found"
-                echo "Please run 'claude auth' to authenticate"
-                exit 1
-            fi
+            echo "Authentication required after container restart"
+            echo "This is a known limitation with Claude Code in containers"
+            echo ""
+            echo "OAuth session state cannot be restored from credential files alone."
+            echo "Please run 'claude auth' to re-authenticate"
+            exit 1
         fi
         
         # Execute the actual command

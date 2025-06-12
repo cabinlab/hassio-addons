@@ -399,28 +399,18 @@ if [ ! -f "/root/.claude/.credentials.json" ]; then
     exit 1
 fi
 
-# Extract token
-ACCESS_TOKEN=$(grep -o '"accessToken":"[^"]*"' /root/.claude/.credentials.json 2>/dev/null | sed 's/"accessToken":"//' | sed 's/"$//')
-
-if [ -z "$ACCESS_TOKEN" ]; then
-    echo "Could not extract access token from credentials file"
-    exit 1
-fi
-
-echo "Found access token (length: ${#ACCESS_TOKEN})"
-
-# Export to environment
-export ANTHROPIC_API_KEY="$ACCESS_TOKEN"
-export CLAUDE_API_KEY="$ACCESS_TOKEN"
-
-# Try to validate
-if timeout 3 claude --version >/dev/null 2>&1; then
-    echo "✓ Authentication appears to be working!"
-else
-    echo "✗ Claude still not recognizing the authentication"
-    echo "This is a known limitation with Claude Code in containers"
-    echo "Please run 'claude auth' to re-authenticate"
-fi
+# OAuth tokens cannot be used as API keys
+echo "Unfortunately, Claude Code OAuth tokens cannot be restored this way."
+echo ""
+echo "Claude Code uses OAuth authentication which includes:"
+echo "- Access tokens (for API calls)"
+echo "- Refresh tokens (to get new access tokens)"
+echo "- Session state (internal to Claude Code)"
+echo ""
+echo "After container restart, the session state is lost and cannot be restored"
+echo "by simply having the token files. This is a known limitation."
+echo ""
+echo "Please run 'claude auth' to re-authenticate."
 EOF
 
 chmod +x /usr/local/bin/restore-auth
@@ -460,17 +450,9 @@ chmod +x /usr/local/bin/credential-sync-daemon
 # Uncomment the next line to enable the wrapper
 # echo "alias claude='/usr/local/bin/claude-wrapper'" >> /etc/bash.bashrc
 
-# Extract token from stored credentials if available
-if [ -f "/root/.claude/.credentials.json" ]; then
-    # Try to extract access token for potential use
-    ACCESS_TOKEN=$(grep -o '"accessToken":"[^"]*"' /root/.claude/.credentials.json 2>/dev/null | sed 's/"accessToken":"//' | sed 's/"$//')
-    if [ -n "$ACCESS_TOKEN" ]; then
-        bashio::log.info "Found stored access token (length: ${#ACCESS_TOKEN})"
-        # Export it in case Claude Code checks env vars
-        export ANTHROPIC_API_KEY="$ACCESS_TOKEN"
-        export CLAUDE_API_KEY="$ACCESS_TOKEN"
-    fi
-fi
+# Do NOT extract OAuth tokens and set as API keys - they are different!
+# Claude Code uses OAuth for authentication, not API keys
+# Setting ANTHROPIC_API_KEY with an OAuth token causes confusion
 
 # Configure MCP servers in the persistent location
 # This ensures Claude Code picks up the configuration
