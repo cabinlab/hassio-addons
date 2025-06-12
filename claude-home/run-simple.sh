@@ -23,8 +23,19 @@ ln -sf /config/claude-config/.config/claude /root/.config/claude
 # Verify symlink was created
 if [ -L /root/.config/claude ]; then
     bashio::log.info "Authentication persistence configured - symlink created"
+    bashio::log.info "Symlink points to: $(readlink -f /root/.config/claude)"
+    
+    # Debug: Check permissions
+    bashio::log.info "Persistent dir permissions: $(ls -ld /config/claude-config/.config/claude)"
+    
+    # Debug: List contents
+    bashio::log.info "Contents of persistent auth dir:"
+    ls -la /config/claude-config/.config/claude/ 2>&1 | while read line; do
+        bashio::log.info "  $line"
+    done
 else
     bashio::log.error "Failed to create auth persistence symlink"
+    bashio::log.error "Check if /root/.config/claude exists: $(ls -la /root/.config/ 2>&1)"
 fi
 
 # Copy existing auth if found in old location
@@ -32,6 +43,19 @@ if [ -f "/config/claude-config/auth.json" ]; then
     bashio::log.info "Migrating old auth file to new location"
     cp /config/claude-config/auth.json /config/claude-config/.config/claude/
 fi
+
+# Debug: Check various possible auth locations
+bashio::log.info "Checking for existing auth files..."
+for location in \
+    "/root/.config/claude/auth.json" \
+    "/root/.claude/auth.json" \
+    "/root/.anthropic/auth.json" \
+    "/config/claude-config/.config/claude/auth.json" \
+    "/config/claude-config/auth.json"; do
+    if [ -f "$location" ]; then
+        bashio::log.info "Found auth file at: $location"
+    fi
+done
 
 # Get model from config and map to actual model ID
 MODEL_CHOICE=$(bashio::config 'claude_model' 'haiku')
@@ -160,8 +184,10 @@ else
     echo ""
     echo "             Run 'claude' and follow the prompts to login"
     echo ""
-    echo "             Debug: After login, check if auth saved to:"
+    echo "             Debug: After login, run these commands:"
     echo "             ls -la /root/.config/claude/"
+    echo "             ls -la /config/claude-config/.config/claude/"
+    echo "             find /root -name 'auth.json' 2>/dev/null"
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
