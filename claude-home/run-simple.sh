@@ -10,6 +10,7 @@ mkdir -p /config/claude-config
 
 # Create persistent auth storage
 mkdir -p /config/claude-config/.config/claude
+mkdir -p /config/claude-config/.config/anthropic
 mkdir -p /root/.config
 
 # Remove existing directory/symlink if it exists
@@ -21,12 +22,21 @@ fi
 # Create symlink for auth persistence
 ln -sf /config/claude-config/.config/claude /root/.config/claude
 
-# Ensure the symlink was created (not a directory)
+# Also symlink anthropic directory in case auth goes there
+if [ -e /root/.config/anthropic ] || [ -L /root/.config/anthropic ]; then
+    rm -rf /root/.config/anthropic
+fi
+ln -sf /config/claude-config/.config/anthropic /root/.config/anthropic
+
+# Ensure the symlinks were created (not directories)
 if [ -L /root/.config/claude ]; then
-    bashio::log.info "Symlink created successfully"
+    bashio::log.info "Claude symlink created successfully"
 elif [ -d /root/.config/claude ]; then
     bashio::log.error "ERROR: /root/.config/claude is a directory, not a symlink!"
-    bashio::log.error "Something recreated it after we deleted it"
+fi
+
+if [ -L /root/.config/anthropic ]; then
+    bashio::log.info "Anthropic symlink created successfully"
 fi
 
 # Verify symlink was created
@@ -71,6 +81,14 @@ done
 bashio::log.info "Searching for auth-related files..."
 find /root -name "*auth*" -type f 2>/dev/null | while read file; do
     bashio::log.info "Found auth-related file: $file"
+done
+
+# Check for OAuth tokens or credentials
+bashio::log.info "Searching for Claude OAuth/credential files..."
+for pattern in "*token*" "*credential*" "*oauth*" "*.json"; do
+    find /root/.config -name "$pattern" -type f 2>/dev/null | while read file; do
+        bashio::log.info "Found potential auth file: $file"
+    done
 done
 
 # Get model from config and map to actual model ID
@@ -193,12 +211,12 @@ echo "             Auth check: /config/claude-config/.config/claude/"
 AUTH_FOUND=false
 if [ -d "/config/claude-config/.config/claude" ]; then
     for auth_file in /config/claude-config/.config/claude/*auth* /config/claude-config/.config/claude/.*auth*; do
-        if [ -f "$auth_file" ]; then
+        if [ -f "\$auth_file" ]; then
             AUTH_FOUND=true
-            echo "             Found: $(basename $auth_file)"
+            echo "             Found: \$(basename "\$auth_file")"
             break
         fi
-    done
+    done 2>/dev/null
 fi
 
 if [ "$AUTH_FOUND" = "true" ]; then
