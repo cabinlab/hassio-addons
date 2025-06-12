@@ -195,16 +195,37 @@ EOF
 
 chmod +x /tmp/startup.sh
 
-# TODO: Configure Home Assistant MCP when we figure out proper detection
-# Currently commented out because:
-# 1. MCP detection endpoint is unknown
-# 2. HA MCP Server doesn't provide device state tools yet
-# 3. Need to research proper integration method
-#
-# if [ "$MCP_AVAILABLE" = "true" ]; then
-#     bashio::log.info "Configuring Home Assistant MCP Server connection"
-#     ...
-# fi
+# Configure MCP servers in the persistent location
+# This ensures Claude Code picks up the configuration
+mkdir -p /config/claude-config/.config/claude
+
+# Create project-level MCP configuration
+cat > /config/claude-config/.config/claude/.mcp.json << EOF
+{
+  "homeassistant": {
+    "transport": "sse", 
+    "url": "http://supervisor/core/api/mcp",
+    "env": {
+      "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+    }
+  }
+}
+EOF
+
+# Also create in the working directory for project scope
+cat > /root/.mcp.json << EOF
+{
+  "homeassistant": {
+    "transport": "sse", 
+    "url": "http://supervisor/core/api/mcp",
+    "env": {
+      "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+    }
+  }
+}
+EOF
+
+bashio::log.info "MCP configuration files created in persistent and project locations"
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
