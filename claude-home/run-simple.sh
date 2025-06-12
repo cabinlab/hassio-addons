@@ -72,6 +72,12 @@ if [ -f "/config/claude-config/auth.json" ]; then
     cp /config/claude-config/auth.json /config/claude-config/.config/claude/
 fi
 
+# Check if credentials.json exists in home directory and copy to persistent storage
+if [ -f "/root/.claude/.credentials.json" ] && [ ! -f "/config/claude-config/.claude/.credentials.json" ]; then
+    bashio::log.info "Found credentials in /root/.claude/, copying to persistent storage"
+    cp /root/.claude/.credentials.json /config/claude-config/.claude/
+fi
+
 # Debug: Check various possible auth locations
 bashio::log.info "Checking for existing auth files..."
 for location in \
@@ -88,7 +94,7 @@ done
 
 # Also search for any auth-related files
 bashio::log.info "Searching for auth-related files..."
-find /root -name "*auth*" -type f 2>/dev/null | while read file; do
+find /root -name "*auth*" -o -name "*credential*" -type f 2>/dev/null | while read file; do
     bashio::log.info "Found auth-related file: $file"
 done
 
@@ -218,8 +224,8 @@ echo -e "\${RESET}"
 echo ""
 
 # Check if authenticated by looking for Claude credential files
-# Claude Code stores auth in ~/.claude.json
-if [ -f "/config/claude-config/.claude/.claude.json" ] || [ -f "/root/.claude/.claude.json" ]; then
+# Claude Code stores auth in ~/.claude/.credentials.json
+if [ -f "/config/claude-config/.claude/.credentials.json" ] || [ -f "/root/.claude/.credentials.json" ]; then
     AUTH_FOUND=true
 else
     AUTH_FOUND=false
@@ -320,11 +326,40 @@ echo "  /config/claude-config/.config/anthropic/:"
 ls -la /config/claude-config/.config/anthropic/ 2>/dev/null
 
 echo ""
-echo "7. Looking for .claude.json specifically:"
+echo "7. Looking for .credentials.json specifically:"
+find /root /config -name ".credentials.json" 2>/dev/null
+echo ""
+echo "8. Looking for .claude.json as fallback:"
 find /root /config -name ".claude.json" 2>/dev/null
 EOF
 
 chmod +x /usr/local/bin/check-auth
+
+# Create a credential sync helper
+cat > /usr/local/bin/sync-credentials << 'EOF'
+#!/bin/bash
+# Sync Claude credentials to persistent storage
+if [ -f "/root/.claude/.credentials.json" ]; then
+    cp /root/.claude/.credentials.json /config/claude-config/.claude/ 2>/dev/null && \
+        echo "Credentials synced to persistent storage"
+fi
+EOF
+
+chmod +x /usr/local/bin/sync-credentials
+
+# Create a background process to periodically sync credentials
+cat > /usr/local/bin/credential-sync-daemon << 'EOF'
+#!/bin/bash
+while true; do
+    sleep 60  # Check every minute
+    /usr/local/bin/sync-credentials >/dev/null 2>&1
+done
+EOF
+
+chmod +x /usr/local/bin/credential-sync-daemon
+
+# Start the credential sync daemon in background
+/usr/local/bin/credential-sync-daemon &
 
 # Configure MCP servers in the persistent location
 # This ensures Claude Code picks up the configuration
