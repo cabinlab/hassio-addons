@@ -42,6 +42,7 @@ bashio::log.info "Auto-start Claude: $AUTO_CLAUDE"
 # Get notification settings
 HA_NOTIFICATIONS=$(bashio::config 'ha_notifications' 'false')
 NOTIFICATION_SERVICE=$(bashio::config 'notification_service' 'persistent_notification')
+NOTIFY_SERVICES=""
 
 # Discover available notification services if notifications are enabled
 if [ "$HA_NOTIFICATIONS" = "true" ]; then
