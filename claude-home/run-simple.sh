@@ -256,25 +256,16 @@ echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  
 echo -e "\${RESET}"
 echo ""
 
-# Check if authenticated by validating Claude can actually use the credentials
-# Just checking file existence isn't enough - need to verify Claude accepts them
+# Check if authenticated
+# Important: Claude Code OAuth sessions don't survive container restarts
+# Even with credential files, a new container always needs fresh auth
 AUTH_FOUND=false
 
-# First check if credentials file exists
-if [ -f "/config/claude-config/.claude/.credentials.json" ] || [ -f "/root/.claude/.credentials.json" ]; then
-    # File exists, now check if Claude actually recognizes it
-    # Use --version as a quick non-interactive test
-    if timeout 3 claude --version >/dev/null 2>&1; then
-        AUTH_FOUND=true
-    else
-        # Credentials file exists but Claude doesn't recognize it
-        # This happens after container restart
-        AUTH_FOUND=false
-    fi
-else
-    # No credentials file at all
-    AUTH_FOUND=false
-fi
+# Since we can't reliably detect auth state after container restart,
+# and we know credentials don't work across containers, always show
+# the accurate state on container start
+# The only exception would be if someone re-enters the terminal in the
+# same container session after authenticating
 
 if [ "\$AUTH_FOUND" = "true" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
