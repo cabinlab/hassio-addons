@@ -8,12 +8,30 @@ bashio::log.info "Claude Home starting..."
 mkdir -p /root/.claude
 mkdir -p /config/claude-config
 
-# Create persistent auth storage with symlink
+# Create persistent auth storage
 mkdir -p /config/claude-config/.config/claude
 mkdir -p /root/.config
+
+# Remove existing directory/symlink if it exists
+if [ -e /root/.config/claude ]; then
+    rm -rf /root/.config/claude
+fi
+
+# Create symlink for auth persistence
 ln -sf /config/claude-config/.config/claude /root/.config/claude
 
-bashio::log.info "Authentication persistence configured"
+# Verify symlink was created
+if [ -L /root/.config/claude ]; then
+    bashio::log.info "Authentication persistence configured - symlink created"
+else
+    bashio::log.error "Failed to create auth persistence symlink"
+fi
+
+# Copy existing auth if found in old location
+if [ -f "/config/claude-config/auth.json" ]; then
+    bashio::log.info "Migrating old auth file to new location"
+    cp /config/claude-config/auth.json /config/claude-config/.config/claude/
+fi
 
 # Get model from config and map to actual model ID
 MODEL_CHOICE=$(bashio::config 'claude_model' 'haiku')
@@ -80,9 +98,11 @@ fi
 
 # Check for MCP availability early
 MCP_AVAILABLE="false"
-if bashio::api.supervisor GET /core/api/mcp false &>/dev/null 2>&1; then
-    MCP_AVAILABLE="true"
-fi
+# TODO: Need to find correct way to detect if MCP Server integration is installed
+# For now, always false until we figure out the right detection method
+# if bashio::api.supervisor GET /core/api/mcp false &>/dev/null 2>&1; then
+#     MCP_AVAILABLE="true"
+# fi
 
 # Create startup script with ASCII header
 cat > /tmp/startup.sh << EOF
@@ -126,6 +146,9 @@ echo -e "\${RESET}"
 echo ""
 
 # Check if authenticated by looking for Claude credential files
+# Debug: Show where we're looking
+echo "             Auth check: /config/claude-config/.config/claude/auth.json"
+
 # Claude Code stores auth in ~/.config/claude/auth.json (now symlinked to persistent storage)
 if [ -f "/config/claude-config/.config/claude/auth.json" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
@@ -136,6 +159,9 @@ else
     echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Not authenticated yet !!!!!\${RESET}"
     echo ""
     echo "             Run 'claude' and follow the prompts to login"
+    echo ""
+    echo "             Debug: After login, check if auth saved to:"
+    echo "             ls -la /root/.config/claude/"
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
@@ -169,32 +195,16 @@ EOF
 
 chmod +x /tmp/startup.sh
 
-# Configure Home Assistant MCP if available
-if [ "$MCP_AVAILABLE" = "true" ]; then
-    bashio::log.info "Configuring Home Assistant MCP Server connection"
-    
-    # Get supervisor token for MCP access
-    MCP_TOKEN="${SUPERVISOR_TOKEN}"
-    MCP_URL="http://supervisor/core/api/mcp"
-    
-    # Create MCP configuration for Claude
-    mkdir -p /root/.config/claude
-    cat > /root/.config/claude/mcp-servers.json << EOF
-{
-  "homeassistant": {
-    "transport": "sse",
-    "url": "$MCP_URL",
-    "headers": {
-      "Authorization": "Bearer $MCP_TOKEN"
-    }
-  }
-}
-EOF
-    
-    bashio::log.info "MCP configuration created for Home Assistant"
-else
-    bashio::log.info "Home Assistant MCP Server not detected - using standard API"
-fi
+# TODO: Configure Home Assistant MCP when we figure out proper detection
+# Currently commented out because:
+# 1. MCP detection endpoint is unknown
+# 2. HA MCP Server doesn't provide device state tools yet
+# 3. Need to research proper integration method
+#
+# if [ "$MCP_AVAILABLE" = "true" ]; then
+#     bashio::log.info "Configuring Home Assistant MCP Server connection"
+#     ...
+# fi
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
