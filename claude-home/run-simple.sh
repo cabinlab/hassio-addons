@@ -312,10 +312,16 @@ ps aux | grep -i claude | grep -v grep
 
 echo ""
 echo "6. Checking persistent storage:"
+echo "  /config/claude-config/.claude/:"
+ls -la /config/claude-config/.claude/ 2>/dev/null
 echo "  /config/claude-config/.config/claude/:"
 ls -la /config/claude-config/.config/claude/ 2>/dev/null
 echo "  /config/claude-config/.config/anthropic/:"
 ls -la /config/claude-config/.config/anthropic/ 2>/dev/null
+
+echo ""
+echo "7. Looking for .claude.json specifically:"
+find /root /config -name ".claude.json" 2>/dev/null
 EOF
 
 chmod +x /usr/local/bin/check-auth

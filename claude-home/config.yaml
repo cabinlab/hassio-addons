@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.0.9"
+version: "2.0.10"
 slug: "claude_home"
 init: false
 
