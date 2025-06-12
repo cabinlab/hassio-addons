@@ -219,7 +219,7 @@ if [ -d "/config/claude-config/.config/claude" ]; then
     done 2>/dev/null
 fi
 
-if [ "$AUTH_FOUND" = "true" ]; then
+if [ "\$AUTH_FOUND" = "true" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
     echo ""
     echo "             Run 'claude' to start an interactive session"
@@ -229,10 +229,8 @@ else
     echo ""
     echo "             Run 'claude' and follow the prompts to login"
     echo ""
-    echo "             Debug: After login, run these commands:"
-    echo "             ls -la /root/.config/claude/"
-    echo "             ls -la /config/claude-config/.config/claude/"
-    echo "             find /root -name 'auth.json' 2>/dev/null"
+    echo "             Debug: After login, run: check-auth"
+    echo "             This will search for auth files in all locations"
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
@@ -265,6 +263,33 @@ fi
 EOF
 
 chmod +x /tmp/startup.sh
+
+# Create auth check helper script
+cat > /usr/local/bin/check-auth << 'EOF'
+#!/bin/bash
+echo "=== Checking for Claude authentication files ==="
+echo ""
+echo "Searching in /root/.config/:"
+find /root/.config -name "*auth*" -o -name "*token*" -o -name "*credential*" 2>/dev/null | while read f; do
+    echo "  Found: $f"
+    if [ -L "$f" ]; then
+        echo "    -> Symlink to: $(readlink -f "$f")"
+    fi
+done
+
+echo ""
+echo "Searching in npm global:"
+find /usr/local/lib/node_modules -name "*auth*" -o -name "*token*" 2>/dev/null | head -10 | while read f; do
+    echo "  Found: $f"
+done
+
+echo ""
+echo "Checking persistent storage:"
+ls -la /config/claude-config/.config/claude/ 2>/dev/null
+ls -la /config/claude-config/.config/anthropic/ 2>/dev/null
+EOF
+
+chmod +x /usr/local/bin/check-auth
 
 # Configure MCP servers in the persistent location
 # This ensures Claude Code picks up the configuration
