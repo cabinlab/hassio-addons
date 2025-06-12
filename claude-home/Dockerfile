@@ -33,7 +33,8 @@ RUN npm install -g @anthropic-ai/claude-code
 # Copy run scripts and make them executable
 COPY run.sh /
 COPY run-simple.sh /
-RUN chmod a+x /run.sh /run-simple.sh
+COPY claude-wrapper.sh /usr/local/bin/claude-wrapper
+RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper
 
 # S6 expects the service in a specific location for legacy mode
 # Use the simple script for now

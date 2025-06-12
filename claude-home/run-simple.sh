@@ -275,7 +275,8 @@ else
     echo "             Run 'claude' and follow the prompts to login"
     echo ""
     echo "             Debug: After login, run: check-auth"
-    echo "             This will search for auth files in all locations"
+    echo "             Try restore: restore-auth (experimental)"
+    echo "             Rollback: See /ROLLBACK.md if needed"
 fi
 echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
@@ -368,6 +369,42 @@ EOF
 
 chmod +x /usr/local/bin/check-auth
 
+# Create a helper to restore auth from stored credentials
+cat > /usr/local/bin/restore-auth << 'EOF'
+#!/bin/bash
+echo "Attempting to restore authentication from stored credentials..."
+
+if [ ! -f "/root/.claude/.credentials.json" ]; then
+    echo "No credentials file found at /root/.claude/.credentials.json"
+    exit 1
+fi
+
+# Extract token
+ACCESS_TOKEN=$(grep -o '"accessToken":"[^"]*"' /root/.claude/.credentials.json 2>/dev/null | sed 's/"accessToken":"//' | sed 's/"$//')
+
+if [ -z "$ACCESS_TOKEN" ]; then
+    echo "Could not extract access token from credentials file"
+    exit 1
+fi
+
+echo "Found access token (length: ${#ACCESS_TOKEN})"
+
+# Export to environment
+export ANTHROPIC_API_KEY="$ACCESS_TOKEN"
+export CLAUDE_API_KEY="$ACCESS_TOKEN"
+
+# Try to validate
+if timeout 3 claude --version >/dev/null 2>&1; then
+    echo "✓ Authentication appears to be working!"
+else
+    echo "✗ Claude still not recognizing the authentication"
+    echo "This is a known limitation with Claude Code in containers"
+    echo "Please run 'claude auth' to re-authenticate"
+fi
+EOF
+
+chmod +x /usr/local/bin/restore-auth
+
 # Create a credential sync helper
 cat > /usr/local/bin/sync-credentials << 'EOF'
 #!/bin/bash
@@ -398,6 +435,22 @@ chmod +x /usr/local/bin/credential-sync-daemon
 
 # Start the credential sync daemon in background
 /usr/local/bin/credential-sync-daemon &
+
+# Create claude alias to use wrapper (optional - can be disabled if it causes issues)
+# Uncomment the next line to enable the wrapper
+# echo "alias claude='/usr/local/bin/claude-wrapper'" >> /etc/bash.bashrc
+
+# Extract token from stored credentials if available
+if [ -f "/root/.claude/.credentials.json" ]; then
+    # Try to extract access token for potential use
+    ACCESS_TOKEN=$(grep -o '"accessToken":"[^"]*"' /root/.claude/.credentials.json 2>/dev/null | sed 's/"accessToken":"//' | sed 's/"$//')
+    if [ -n "$ACCESS_TOKEN" ]; then
+        bashio::log.info "Found stored access token (length: ${#ACCESS_TOKEN})"
+        # Export it in case Claude Code checks env vars
+        export ANTHROPIC_API_KEY="$ACCESS_TOKEN"
+        export CLAUDE_API_KEY="$ACCESS_TOKEN"
+    fi
+fi
 
 # Configure MCP servers in the persistent location
 # This ensures Claude Code picks up the configuration
