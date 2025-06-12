@@ -233,6 +233,9 @@ cat > /tmp/startup.sh << EOF
 # Set Claude config directory to persistent storage
 export CLAUDE_CONFIG_DIR="/config/claude-config"
 
+# Change to a more appropriate working directory
+cd /root
+
 # Auto-start Claude setting
 AUTO_CLAUDE="$AUTO_CLAUDE"
 
@@ -497,6 +500,23 @@ cat > /root/.mcp.json << EOF
 EOF
 
 bashio::log.info "MCP configuration files created in persistent and project locations"
+
+# Create default CLAUDE.md file if it doesn't exist
+if [ ! -f "/root/CLAUDE.md" ]; then
+    cat > /root/CLAUDE.md << 'EOF'
+# CLAUDE.md
+
+This file provides context to Claude about your project and preferences.
+
+## Project Overview
+Home Assistant addon environment
+
+## Preferences
+- Be concise and direct
+- Focus on practical solutions
+EOF
+    bashio::log.info "Created default CLAUDE.md file"
+fi
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
