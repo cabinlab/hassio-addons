@@ -4,18 +4,30 @@
 
 bashio::log.info "Claude Home starting..."
 
-# Create settings directory and move existing .claude if it exists
-if [ -d /root/.claude ] && [ ! -L /root/.claude ]; then
-    bashio::log.info "Moving existing .claude directory to persistent storage"
-    cp -r /root/.claude /config/claude-config/
-    rm -rf /root/.claude
-fi
-
+# Create persistent directories first
 mkdir -p /config/claude-config/.claude
 mkdir -p /config/claude-config
 
-# Create symlink for .claude directory (where auth is actually stored!)
+# Remove any existing .claude directory/symlink to ensure clean symlink creation
+if [ -e /root/.claude ] || [ -L /root/.claude ]; then
+    bashio::log.info "Removing existing /root/.claude to create fresh symlink"
+    rm -rf /root/.claude
+fi
+
+# Create symlink for .claude directory BEFORE Claude initializes
 ln -sf /config/claude-config/.claude /root/.claude
+bashio::log.info "Created symlink: /root/.claude -> /config/claude-config/.claude"
+
+# If credentials exist in persistent storage, they'll now be available via symlink
+if [ -f /config/claude-config/.claude/.credentials.json ]; then
+    bashio::log.info "Found existing credentials in persistent storage"
+    # Validate the credentials file is not empty
+    if [ -s /config/claude-config/.claude/.credentials.json ]; then
+        bashio::log.info "Credentials file is valid (non-empty)"
+    else
+        bashio::log.warning "Credentials file exists but is empty"
+    fi
+fi
 
 # Create persistent auth storage for other potential locations
 mkdir -p /config/claude-config/.config/claude
@@ -72,25 +84,34 @@ if [ -f "/config/claude-config/auth.json" ]; then
     cp /config/claude-config/auth.json /config/claude-config/.config/claude/
 fi
 
-# Check if credentials.json exists in home directory and copy to persistent storage
-if [ -f "/root/.claude/.credentials.json" ] && [ ! -f "/config/claude-config/.claude/.credentials.json" ]; then
-    bashio::log.info "Found credentials in /root/.claude/, copying to persistent storage"
-    cp /root/.claude/.credentials.json /config/claude-config/.claude/
-fi
+# No need to check and copy - symlink handles this automatically
+# Any credentials saved by Claude will go directly to persistent storage
 
 # Debug: Check various possible auth locations
 bashio::log.info "Checking for existing auth files..."
 for location in \
+    "/root/.claude/.credentials.json" \
+    "/config/claude-config/.claude/.credentials.json" \
     "/root/.claude.json" \
     "/root/.claude/.claude.json" \
-    "/config/claude-config/.claude/.claude.json" \
     "/root/.config/claude/auth.json" \
-    "/root/.config/anthropic/auth.json" \
-    "/config/claude-config/.config/claude/auth.json"; do
+    "/root/.config/anthropic/auth.json"; do
     if [ -f "$location" ]; then
         bashio::log.info "Found auth file at: $location"
+        # Show file size to ensure it's not empty
+        size=$(stat -c%s "$location" 2>/dev/null || echo "0")
+        bashio::log.info "  Size: $size bytes"
     fi
 done
+
+# Check symlink status
+bashio::log.info "Checking symlink status:"
+if [ -L "/root/.claude" ]; then
+    target=$(readlink -f "/root/.claude")
+    bashio::log.info "  /root/.claude -> $target (symlink OK)"
+else
+    bashio::log.error "  /root/.claude is NOT a symlink!"
+fi
 
 # Also search for any auth-related files
 bashio::log.info "Searching for auth-related files..."
@@ -137,6 +158,18 @@ if [ -L /root/.claude ]; then
 fi
 
 bashio::log.info "Model set to: $CLAUDE_MODEL"
+
+# Validate Claude authentication if credentials exist
+if [ -f "/root/.claude/.credentials.json" ]; then
+    bashio::log.info "Validating Claude authentication..."
+    # Use timeout to prevent hanging if auth is invalid
+    if timeout 5 claude --version >/dev/null 2>&1; then
+        bashio::log.info "Claude authentication validated successfully"
+    else
+        bashio::log.warning "Claude credentials exist but validation failed"
+        bashio::log.warning "You may need to re-authenticate with 'claude auth'"
+    fi
+fi
 
 # Get auto-start preference
 AUTO_CLAUDE=$(bashio::config 'auto_claude' 'false')
@@ -338,10 +371,15 @@ chmod +x /usr/local/bin/check-auth
 # Create a credential sync helper
 cat > /usr/local/bin/sync-credentials << 'EOF'
 #!/bin/bash
-# Sync Claude credentials to persistent storage
-if [ -f "/root/.claude/.credentials.json" ]; then
-    cp /root/.claude/.credentials.json /config/claude-config/.claude/ 2>/dev/null && \
-        echo "Credentials synced to persistent storage"
+# Since we use symlinks, this is now just for verification
+if [ -L "/root/.claude" ]; then
+    if [ -f "/root/.claude/.credentials.json" ]; then
+        echo "Credentials found via symlink (already persistent)"
+    else
+        echo "No credentials found"
+    fi
+else
+    echo "WARNING: /root/.claude is not a symlink! Auth may not persist."
 fi
 EOF
 
