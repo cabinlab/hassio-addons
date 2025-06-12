@@ -149,17 +149,24 @@ case "$MODEL_CHOICE" in
 esac
 export ANTHROPIC_MODEL="$CLAUDE_MODEL"
 
-# Create settings.json in correct location (persistent)
+# Create settings.json in Claude config directory
+# Since CLAUDE_CONFIG_DIR is set to /config/claude-config,
+# Claude will look for settings.json directly there
+cat > /config/claude-config/settings.json << EOF
+{
+  "model": "$CLAUDE_MODEL"
+}
+EOF
+
+# Also create in .claude subdirectory for backwards compatibility
+mkdir -p /config/claude-config/.claude
 cat > /config/claude-config/.claude/settings.json << EOF
 {
   "model": "$CLAUDE_MODEL"
 }
 EOF
 
-# Also create in /root/.claude if it's a symlink
-if [ -L /root/.claude ]; then
-    bashio::log.info "Settings saved to persistent storage via symlink"
-fi
+bashio::log.info "Settings saved to Claude config directory"
 
 bashio::log.info "Model set to: $CLAUDE_MODEL"
 
