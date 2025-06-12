@@ -256,11 +256,23 @@ echo "                    ╚═╝  ╚═╝ ╚═════╝ ╚═╝  
 echo -e "\${RESET}"
 echo ""
 
-# Check if authenticated by looking for Claude credential files
-# Claude Code stores auth in ~/.claude/.credentials.json
+# Check if authenticated by validating Claude can actually use the credentials
+# Just checking file existence isn't enough - need to verify Claude accepts them
+AUTH_FOUND=false
+
+# First check if credentials file exists
 if [ -f "/config/claude-config/.claude/.credentials.json" ] || [ -f "/root/.claude/.credentials.json" ]; then
-    AUTH_FOUND=true
+    # File exists, now check if Claude actually recognizes it
+    # Use --version as a quick non-interactive test
+    if timeout 3 claude --version >/dev/null 2>&1; then
+        AUTH_FOUND=true
+    else
+        # Credentials file exists but Claude doesn't recognize it
+        # This happens after container restart
+        AUTH_FOUND=false
+    fi
 else
+    # No credentials file at all
     AUTH_FOUND=false
 fi
 
@@ -270,12 +282,20 @@ if [ "\$AUTH_FOUND" = "true" ]; then
     echo "             Run 'claude' to start an interactive session"
     echo "             Run 'claude --help' to see all options"
 else
-    echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Not authenticated yet !!!!!\${RESET}"
+    # Check if we have stored credentials that aren't working
+    if [ -f "/config/claude-config/.claude/.credentials.json" ]; then
+        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Stored credentials need refresh !!!!!\${RESET}"
+        echo ""
+        echo "             Credentials found but not valid after restart"
+        echo "             Run 'claude auth' to re-authenticate"
+        echo ""
+        echo "             Debug: check-auth | Try: restore-auth"
+    else
+        echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Not authenticated yet !!!!!\${RESET}"
+        echo ""
+        echo "             Run 'claude auth' to authenticate"
+    fi
     echo ""
-    echo "             Run 'claude' and follow the prompts to login"
-    echo ""
-    echo "             Debug: After login, run: check-auth"
-    echo "             Try restore: restore-auth (experimental)"
     echo "             Rollback: See /ROLLBACK.md if needed"
 fi
 echo ""
