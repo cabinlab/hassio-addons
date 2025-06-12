@@ -501,22 +501,9 @@ EOF
 
 bashio::log.info "MCP configuration files created in persistent and project locations"
 
-# Create default CLAUDE.md file if it doesn't exist
-if [ ! -f "/root/CLAUDE.md" ]; then
-    cat > /root/CLAUDE.md << 'EOF'
-# CLAUDE.md
-
-This file provides context to Claude about your project and preferences.
-
-## Project Overview
-Home Assistant addon environment
-
-## Preferences
-- Be concise and direct
-- Focus on practical solutions
-EOF
-    bashio::log.info "Created default CLAUDE.md file"
-fi
+# Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
+# to properly link it to the memory system
+bashio::log.info "Working directory set to /root for Claude memory support"
 
 # Start web terminal
 bashio::log.info "Starting web terminal on port 7681..."
