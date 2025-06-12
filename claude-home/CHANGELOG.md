@@ -1,6 +1,25 @@
 # Changelog
 
-## 1.4.14 - 2025-01-06
+## 2.0.0 - 2025-06-12
+
+### Major Platform Change
+- **BREAKING**: Migrated from Alpine Linux to Debian base for improved compatibility
+- **NEW**: Full support for standard Claude Code installation via npm
+- **NEW**: Native ttyd web terminal without Alpine-specific workarounds
+- **FIXED**: All authentication and startup issues from Alpine limitations
+
+### Configuration Improvements
+- **NEW**: Simplified model selection to three clear options (Haiku, Sonnet, Opus)
+- **NEW**: Auto-start Claude option for immediate access
+- **IMPROVED**: Better configuration validation and error messages
+
+### Bug Fixes
+- **FIXED**: Startup script variable errors causing boot loops
+- **FIXED**: Model selection now properly persists across restarts
+- **FIXED**: Authentication detection works reliably
+- **FIXED**: Terminal color rendering and UI display issues
+
+## 1.4.14 - 2025-06-06
 
 ### Critical Fixes
 - **FIXED: Model selection bug** - Claude now correctly uses configured model (Haiku) instead of defaulting to Opus (60x cost savings!)
