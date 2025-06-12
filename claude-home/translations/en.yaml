@@ -43,7 +43,14 @@ configuration:
 
   notification_service:
     name: "📨 Notification Service"
-    description: "Home Assistant service to use for notifications (e.g., 'notify.mobile_app_phone')."
+    description: "Home Assistant service to use for notifications. Select 'custom' to enter your own service name."
+    options:
+      persistent_notification: "Persistent Notifications (built-in, always available)"
+      notify.notify: "Default Notify Service (if configured)"
+      notify.mobile_app: "Mobile App Notifications"
+      notify.alexa_media: "Alexa Media Player"
+      notify.telegram: "Telegram Bot"
+      custom: "Custom Service (edit config manually after save)"
 
   context_integration:
     name: "🏠 Home Assistant Context"
