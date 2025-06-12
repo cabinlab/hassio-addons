@@ -4,6 +4,10 @@
 
 bashio::log.info "Claude Home starting..."
 
+# Set Claude config directory to persistent storage
+export CLAUDE_CONFIG_DIR="/config/claude-config"
+bashio::log.info "Set CLAUDE_CONFIG_DIR to: $CLAUDE_CONFIG_DIR"
+
 # Create persistent directories first
 mkdir -p /config/claude-config/.claude
 mkdir -p /config/claude-config
@@ -218,6 +222,9 @@ MCP_AVAILABLE="false"
 # Create startup script with ASCII header
 cat > /tmp/startup.sh << EOF
 #!/bin/bash
+
+# Set Claude config directory to persistent storage
+export CLAUDE_CONFIG_DIR="/config/claude-config"
 
 # Auto-start Claude setting
 AUTO_CLAUDE="$AUTO_CLAUDE"
