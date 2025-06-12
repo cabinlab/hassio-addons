@@ -8,6 +8,13 @@ bashio::log.info "Claude Home starting..."
 mkdir -p /root/.claude
 mkdir -p /config/claude-config
 
+# Create persistent auth storage with symlink
+mkdir -p /config/claude-config/.config/claude
+mkdir -p /root/.config
+ln -sf /config/claude-config/.config/claude /root/.config/claude
+
+bashio::log.info "Authentication persistence configured"
+
 # Get model from config and map to actual model ID
 MODEL_CHOICE=$(bashio::config 'claude_model' 'haiku')
 case "$MODEL_CHOICE" in
@@ -119,8 +126,8 @@ echo -e "\${RESET}"
 echo ""
 
 # Check if authenticated by looking for Claude credential files
-# Claude Code stores auth in ~/.config/claude/auth.json
-if [ -f "/root/.config/claude/auth.json" ] || [ -f "/root/.claude/credentials" ] || [ -f "/config/claude-config/auth.json" ]; then
+# Claude Code stores auth in ~/.config/claude/auth.json (now symlinked to persistent storage)
+if [ -f "/config/claude-config/.config/claude/auth.json" ]; then
     echo -e "                \${GREEN}***** Authenticated *****\${RESET}"
     echo ""
     echo "             Run 'claude' to start an interactive session"
