@@ -218,13 +218,7 @@ if [ "$HA_NOTIFICATIONS" = "true" ]; then
     fi
 fi
 
-# Check for MCP availability early
-MCP_AVAILABLE="false"
-# TODO: Need to find correct way to detect if MCP Server integration is installed
-# For now, always false until we figure out the right detection method
-# if bashio::api.supervisor GET /core/api/mcp false &>/dev/null 2>&1; then
-#     MCP_AVAILABLE="true"
-# fi
+# MCP will be configured via .mcp.json files
 
 # Get working directory before creating the startup script
 WORKING_DIR=$(bashio::config 'working_directory' '/config')
@@ -267,9 +261,6 @@ AUTO_CLAUDE="$AUTO_CLAUDE"
 HA_NOTIFICATIONS="$HA_NOTIFICATIONS"
 NOTIFICATION_SERVICE="$NOTIFICATION_SERVICE"
 NOTIFY_SERVICES="$NOTIFY_SERVICES"
-
-# MCP status
-MCP_AVAILABLE="$MCP_AVAILABLE"
 
 # Colors
 CYAN='\\033[38;2;79;195;193m'
@@ -341,12 +332,7 @@ echo ""
 echo "             Model: \${ANTHROPIC_MODEL:-claude-3-5-haiku-20241022}"
 echo "             Working in: $WORKING_DIR"
 
-# Show MCP status
-if [ "\$MCP_AVAILABLE" = "true" ]; then
-    echo "             MCP: \${GREEN}Connected to Home Assistant\${RESET}"
-else
-    echo "             MCP: Not available"
-fi
+# MCP servers are configured via .mcp.json files
 
 # Show notification settings if enabled
 if [ "\$HA_NOTIFICATIONS" = "true" ]; then
@@ -360,8 +346,7 @@ echo ""
 
 # Show MCP debugging info
 echo ""
-echo "To check MCP connection: claude mcp list"
-echo "To test HA MCP: claude mcp homeassistant get_version"
+echo "MCP commands: 'claude mcp list' to see servers"
 echo ""
 
 # Check if auto-start is enabled
@@ -504,72 +489,100 @@ chmod +x /usr/local/bin/credential-sync-daemon
 # This ensures Claude Code picks up the configuration
 # Note: Directory already created above before symlink
 
+# First check if HA MCP Server integration is available
+bashio::log.info "Checking for Home Assistant MCP Server integration..."
+MCP_ENDPOINT_TEST=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+    -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+    -H "Accept: text/event-stream" \
+    "http://supervisor/core/mcp_server/sse" 2>&1 || true)
+MCP_HTTP_CODE=$(echo "$MCP_ENDPOINT_TEST" | grep "HTTP_CODE:" | cut -d: -f2)
+
+if [ "$MCP_HTTP_CODE" = "200" ] || [ "$MCP_HTTP_CODE" = "404" ]; then
+    # 200 = endpoint exists, 404 = endpoint exists but method not allowed
+    # Both indicate MCP Server is installed
+    bashio::log.info "MCP Server endpoint found (HTTP $MCP_HTTP_CODE)"
+    USE_MCP_PROXY=true
+else
+    bashio::log.warning "MCP Server endpoint not available (HTTP $MCP_HTTP_CODE)"
+    bashio::log.warning "Install the MCP Server integration in Home Assistant to enable MCP features"
+    USE_MCP_PROXY=false
+fi
+
 # Create MCP configuration in Claude Code format
 # 1. In the CLAUDE_CONFIG_DIR location (user scope)
-cat > /config/claude-config/.mcp.json << EOF
+if [ "$USE_MCP_PROXY" = "true" ]; then
+    # Use mcp-remote to handle SSE authentication properly
+    # Note: No spaces around colon in header due to Windows/Cursor bug
+    cat > /config/claude-config/.mcp.json << EOF
 {
   "mcpServers": {
     "homeassistant": {
-      "transport": "sse",
-      "url": "http://supervisor/core/api/mcp",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://supervisor/core/mcp_server/sse",
+        "--header",
+        "Authorization:\${AUTH_HEADER}"
+      ],
       "env": {
-        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+        "AUTH_HEADER": "Bearer ${SUPERVISOR_TOKEN}"
       }
     }
   }
 }
 EOF
+else
+    # No MCP server available
+    cat > /config/claude-config/.mcp.json << EOF
+{
+  "mcpServers": {}
+}
+EOF
+fi
 
 # 2. In the .config/claude subdirectory 
-cat > /config/claude-config/.config/claude/.mcp.json << EOF
-{
-  "mcpServers": {
-    "homeassistant": {
-      "transport": "sse",
-      "url": "http://supervisor/core/api/mcp",
-      "env": {
-        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
-      }
-    }
-  }
-}
-EOF
+cp /config/claude-config/.mcp.json /config/claude-config/.config/claude/.mcp.json
 
 # 3. In the root directory for backward compatibility
-cat > /root/.mcp.json << EOF
-{
-  "mcpServers": {
-    "homeassistant": {
-      "transport": "sse",
-      "url": "http://supervisor/core/api/mcp",
-      "env": {
-        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
-      }
-    }
-  }
-}
-EOF
+cp /config/claude-config/.mcp.json /root/.mcp.json
 
 # 4. Also create in the working directory where Claude will actually run (project scope)
 if [ "$WORKING_DIR" != "/root" ] && [ "$WORKING_DIR" != "/config/claude-config" ]; then
-    cat > "$WORKING_DIR/.mcp.json" << EOF
+    cp /config/claude-config/.mcp.json "$WORKING_DIR/.mcp.json"
+    bashio::log.info "MCP config also created in working directory: $WORKING_DIR"
+fi
+
+if [ "$USE_MCP_PROXY" = "true" ]; then
+    bashio::log.info "MCP configuration created using mcp-remote for SSE transport"
+    bashio::log.info "Note: npx will download mcp-remote on first use"
+    bashio::log.info "If authentication still fails, check Home Assistant logs"
+    # Create debug version for troubleshooting
+    cat > /config/claude-config/mcp-debug.json << EOF
 {
+  "comment": "Debug version with --debug flag",
   "mcpServers": {
-    "homeassistant": {
-      "transport": "sse",
-      "url": "http://supervisor/core/api/mcp",
+    "homeassistant-debug": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://supervisor/core/mcp_server/sse",
+        "--header",
+        "Authorization:\${AUTH_HEADER}",
+        "--debug"
+      ],
       "env": {
-        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+        "AUTH_HEADER": "Bearer ${SUPERVISOR_TOKEN}"
       }
     }
   }
 }
 EOF
-    bashio::log.info "MCP config also created in working directory: $WORKING_DIR"
+else
+    bashio::log.info "MCP configuration disabled - install MCP Server integration in HA"
+    bashio::log.info "Alternative: Consider using hass-mcp for standalone MCP functionality"
 fi
-
-bashio::log.info "MCP configuration files created in multiple locations for discovery"
-bashio::log.info "Note: Home Assistant MCP Server integration must be installed first!"
 
 # Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
 # to properly link it to the memory system

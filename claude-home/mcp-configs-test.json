@@ -1,0 +1,46 @@
+{
+  "comment": "Test configurations for different MCP approaches",
+  "configs": [
+    {
+      "name": "Native HA MCP (SSE with proxy)",
+      "description": "Requires mcp-proxy installed",
+      "mcpServers": {
+        "homeassistant": {
+          "command": "npx",
+          "args": ["-y", "mcp-proxy", "sse", "http://supervisor/core/mcp_server/sse"],
+          "env": {
+            "API_ACCESS_TOKEN": "${SUPERVISOR_TOKEN}"
+          }
+        }
+      }
+    },
+    {
+      "name": "Native HA MCP (Direct SSE)",
+      "description": "If Claude Code supports SSE directly",
+      "mcpServers": {
+        "homeassistant": {
+          "transport": "sse",
+          "url": "http://supervisor/core/mcp_server/sse",
+          "headers": {
+            "Authorization": "Bearer ${SUPERVISOR_TOKEN}"
+          }
+        }
+      }
+    },
+    {
+      "name": "hass-mcp (stdio)",
+      "description": "Using the Python MCP server",
+      "mcpServers": {
+        "homeassistant": {
+          "command": "python3",
+          "args": ["-m", "app"],
+          "cwd": "/opt/hass-mcp",
+          "env": {
+            "HA_URL": "http://supervisor/core",
+            "HA_TOKEN": "${SUPERVISOR_TOKEN}"
+          }
+        }
+      }
+    }
+  ]
+}
