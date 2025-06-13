@@ -358,6 +358,12 @@ if [ "\$HA_NOTIFICATIONS" = "true" ]; then
 fi
 echo ""
 
+# Show MCP debugging info
+echo ""
+echo "To check MCP connection: claude mcp list"
+echo "To test HA MCP: claude mcp homeassistant get_version"
+echo ""
+
 # Check if auto-start is enabled
 if [ "\$AUTO_CLAUDE" = "true" ]; then
     echo "             Auto-starting Claude CLI..."
@@ -498,33 +504,72 @@ chmod +x /usr/local/bin/credential-sync-daemon
 # This ensures Claude Code picks up the configuration
 # Note: Directory already created above before symlink
 
-# Create project-level MCP configuration
+# Create MCP configuration in Claude Code format
+# 1. In the CLAUDE_CONFIG_DIR location (user scope)
+cat > /config/claude-config/.mcp.json << EOF
+{
+  "mcpServers": {
+    "homeassistant": {
+      "transport": "sse",
+      "url": "http://supervisor/core/api/mcp",
+      "env": {
+        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
+    }
+  }
+}
+EOF
+
+# 2. In the .config/claude subdirectory 
 cat > /config/claude-config/.config/claude/.mcp.json << EOF
 {
-  "homeassistant": {
-    "transport": "sse", 
-    "url": "http://supervisor/core/api/mcp",
-    "env": {
-      "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+  "mcpServers": {
+    "homeassistant": {
+      "transport": "sse",
+      "url": "http://supervisor/core/api/mcp",
+      "env": {
+        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
     }
   }
 }
 EOF
 
-# Also create in the working directory for project scope
+# 3. In the root directory for backward compatibility
 cat > /root/.mcp.json << EOF
 {
-  "homeassistant": {
-    "transport": "sse", 
-    "url": "http://supervisor/core/api/mcp",
-    "env": {
-      "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+  "mcpServers": {
+    "homeassistant": {
+      "transport": "sse",
+      "url": "http://supervisor/core/api/mcp",
+      "env": {
+        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
     }
   }
 }
 EOF
 
-bashio::log.info "MCP configuration files created in persistent and project locations"
+# 4. Also create in the working directory where Claude will actually run (project scope)
+if [ "$WORKING_DIR" != "/root" ] && [ "$WORKING_DIR" != "/config/claude-config" ]; then
+    cat > "$WORKING_DIR/.mcp.json" << EOF
+{
+  "mcpServers": {
+    "homeassistant": {
+      "transport": "sse",
+      "url": "http://supervisor/core/api/mcp",
+      "env": {
+        "SUPERVISOR_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
+    }
+  }
+}
+EOF
+    bashio::log.info "MCP config also created in working directory: $WORKING_DIR"
+fi
+
+bashio::log.info "MCP configuration files created in multiple locations for discovery"
+bashio::log.info "Note: Home Assistant MCP Server integration must be installed first!"
 
 # Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
 # to properly link it to the memory system
