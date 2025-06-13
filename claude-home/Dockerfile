@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     wget \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20.x from NodeSource
