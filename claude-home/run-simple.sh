@@ -250,7 +250,7 @@ cd "$WORKING_DIR"
 # Debug: Show what we can see in the directory
 bashio::log.info "Contents of $WORKING_DIR:"
 ls -la "$WORKING_DIR" | head -20 | while read line; do
-    bashio::log.info "  $line"
+    bashio::log.info "  \$line"
 done
 
 # Check if configuration.yaml exists
