@@ -582,10 +582,12 @@ if [ "$WORKING_DIR" != "/root" ] && [ "$WORKING_DIR" != "/config/claude-config" 
 fi
 
 # Test hass-mcp is installed
-if python3 -c "import app" 2>/dev/null; then
-    bashio::log.info "hass-mcp module verified and ready"
+if [ -f /opt/hass-mcp/app/__main__.py ]; then
+    bashio::log.info "hass-mcp files found"
+    # TODO: Re-enable when pip issues are resolved
+    bashio::log.warning "hass-mcp temporarily disabled due to build issues"
 else
-    bashio::log.error "hass-mcp module not found - MCP may not work"
+    bashio::log.warning "hass-mcp not installed - using native MCP only"
 fi
 
 bashio::log.info "MCP configuration created"
