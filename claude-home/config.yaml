@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.0.25"
+version: "2.0.26"
 slug: "claude_home"
 init: false
 
@@ -72,7 +72,7 @@ host_pid: false
 host_ipc: false
 hassio_role: manager
 # This flag makes the protection mode toggle appear in the UI
-full_access: false
+full_access: true
 # AppArmor provides security isolation
 apparmor: true
 
