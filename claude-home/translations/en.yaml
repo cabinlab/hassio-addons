@@ -25,10 +25,6 @@ configuration:
     name: "📝 Verbose Logging"
     description: "Enable detailed logging for debugging. Keep disabled unless troubleshooting issues."
 
-  max_turns:
-    name: "🔄 Max Conversation Turns"
-    description: "Maximum number of back-and-forth exchanges in a single conversation. Higher values use more tokens."
-
   disable_telemetry:
     name: "🔒 Disable Telemetry"
     description: "Prevent Claude from sending usage analytics. Enable for maximum privacy."
@@ -52,16 +48,13 @@ configuration:
       notify.telegram: "Telegram Bot"
       custom: "Custom Service (edit config manually after save)"
 
-  context_integration:
-    name: "🏠 Home Assistant Context"
-    description: "Enable Claude to access Home Assistant state and entity information for better assistance."
-
-  context_domains:
-    name: "🏷️ Context Domains"
-    description: "Comma-separated list of Home Assistant domains to include in context (e.g., 'light,switch,sensor')."
-
-  context_max_entities:
-    name: "📊 Max Context Entities"
-    description: "Maximum number of entities to include in context. Lower values reduce token usage."
+  working_directory:
+    name: "📁 Working Directory"
+    description: "Choose where Claude Code starts. Use /config for HA files (requires Protection Mode disabled), /config/claude-workspace for projects, or /root for home directory."
+    options:
+      /config: "HA Config Directory (Protection Mode required)"
+      /config/claude-workspace: "Claude Workspace (Recommended)"
+      /root: "Home Directory (Trust prompt on start)"
+      /config/custom_components: "Custom Components Development"
 
 network: {}
