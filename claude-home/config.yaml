@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.0.23"
+version: "2.0.24"
 slug: "claude_home"
 init: false
 
@@ -65,6 +65,16 @@ startup: services
 
 # Home Assistant API access for service discovery
 hassio_api: true
+
+# Protection mode - when disabled, allows access to more files
+host_network: false
+host_pid: false  
+host_ipc: false
+hassio_role: manager
+# This flag makes the protection mode toggle appear in the UI
+full_access: false
+# AppArmor provides security isolation
+apparmor: true
 
 # Web UI access URL
 webui: http://[HOST]:[PORT:7681]/
