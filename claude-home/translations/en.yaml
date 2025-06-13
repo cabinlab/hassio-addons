@@ -57,4 +57,12 @@ configuration:
       /root: "Home Directory (Trust prompt on start)"
       /config/custom_components: "Custom Components Development"
 
+  ha_url:
+    name: "🏠 Home Assistant URL (Optional)"
+    description: "Your Home Assistant URL (e.g., http://192.168.1.100:8123). Optional but required for Home Assistant entity discovery and file system access via MCP. Leave blank if not needed."
+
+  ha_token:
+    name: "🔑 Home Assistant Token (Optional)"
+    description: "Long-lived access token from your HA profile. Optional but required for Home Assistant entity discovery and file system access via MCP. Create in Profile → Long-Lived Access Tokens."
+
 network: {}
