@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.2.1"
+version: "2.2.2"
 slug: "claude_home"
 init: false
 
@@ -36,6 +36,8 @@ options:
   ha_notifications: false
   notification_service: "persistent_notification"
   working_directory: "/config"
+  ha_url: ""
+  ha_token: ""
 
 schema:
   claude_model: "list(haiku|sonnet|opus)"
@@ -47,6 +49,8 @@ schema:
   ha_notifications: "bool?"
   notification_service: "list(persistent_notification|notify.notify|notify.mobile_app|notify.alexa_media|notify.telegram|custom)?"
   working_directory: "list(/config|/config/claude-workspace|/root|/config/custom_components)?"
+  ha_url: "str?"
+  ha_token: "password?"
 
 # Volume mapping for persistent storage
 map:
