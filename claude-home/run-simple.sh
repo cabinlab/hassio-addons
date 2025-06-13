@@ -537,6 +537,10 @@ if [ "$USE_MCP_PROXY" = "true" ]; then
         "HA_URL": "http://supervisor/core",
         "HA_TOKEN": "${SUPERVISOR_TOKEN}"
       }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
     }
   }
 }
@@ -555,6 +559,10 @@ else
         "HA_URL": "http://supervisor/core",
         "HA_TOKEN": "${SUPERVISOR_TOKEN}"
       }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
     }
   }
 }
@@ -582,12 +590,16 @@ fi
 
 bashio::log.info "MCP configuration created"
 if [ "$USE_MCP_PROXY" = "true" ]; then
-    bashio::log.info "Using both native HA MCP (via mcp-remote) and hass-mcp as fallback"
-    bashio::log.info "Try 'homeassistant-native' first, then 'homeassistant' if it fails"
+    bashio::log.info "MCP servers configured:"
+    bashio::log.info "  - homeassistant-native: Native HA MCP (may fail)"
+    bashio::log.info "  - homeassistant: hass-mcp fallback"
+    bashio::log.info "  - context7: Test server for documentation (should work)"
 else
-    bashio::log.info "Using hass-mcp for Home Assistant integration"
+    bashio::log.info "MCP servers configured:"
+    bashio::log.info "  - homeassistant: hass-mcp for HA integration"
+    bashio::log.info "  - context7: Test server for documentation"
 fi
-bashio::log.info "MCP servers available via /mcp command in Claude Code"
+bashio::log.info "Use /mcp command in Claude Code to connect"
 
 # Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
 # to properly link it to the memory system

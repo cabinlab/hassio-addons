@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     python3 \
     python3-pip \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20.x from NodeSource
@@ -36,7 +37,9 @@ RUN npm install -g @anthropic-ai/claude-code
 # Copy and install hass-mcp-lite
 COPY hass-mcp-lite /opt/hass-mcp
 WORKDIR /opt/hass-mcp
-RUN pip3 install --no-cache-dir --break-system-packages -e .
+# Install in a more compatible way
+RUN python3 -m pip install --no-cache-dir --break-system-packages httpx mcp && \
+    python3 -m pip install --no-cache-dir --break-system-packages -e .
 WORKDIR /
 
 # Copy run scripts and make them executable
@@ -44,7 +47,8 @@ COPY run.sh /
 COPY run-simple.sh /
 COPY claude-wrapper.sh /usr/local/bin/claude-wrapper
 COPY test-mcp.sh /usr/local/bin/test-mcp
-RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper /usr/local/bin/test-mcp
+COPY mcp-diagnostics.sh /usr/local/bin/mcp-diagnostics
+RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper /usr/local/bin/test-mcp /usr/local/bin/mcp-diagnostics
 
 # S6 expects the service in a specific location for legacy mode
 # Use the simple script for now
