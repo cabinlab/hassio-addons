@@ -83,6 +83,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_FROM=ghcr.io/hassio-addons/debian-base:7.8.3
 
       - name: Update Home Assistant add-on
         if: success() && startsWith(github.ref, 'refs/tags/v')
