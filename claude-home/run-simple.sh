@@ -489,6 +489,21 @@ chmod +x /usr/local/bin/credential-sync-daemon
 # This ensures Claude Code picks up the configuration
 # Note: Directory already created above before symlink
 
+# Get Home Assistant configuration for hass-mcp
+HA_URL=$(bashio::config 'ha_url' '')
+HA_TOKEN=$(bashio::config 'ha_token' '')
+
+# Check if user provided HA configuration
+if [ -n "$HA_URL" ] && [ -n "$HA_TOKEN" ]; then
+    bashio::log.info "Home Assistant URL and token provided for hass-mcp"
+    USE_CUSTOM_HA=true
+else
+    if [ -n "$HA_URL" ] || [ -n "$HA_TOKEN" ]; then
+        bashio::log.warning "Both ha_url and ha_token must be provided for hass-mcp"
+    fi
+    USE_CUSTOM_HA=false
+fi
+
 # First check if HA MCP Server integration is available
 bashio::log.info "Checking for Home Assistant MCP Server integration..."
 MCP_ENDPOINT_TEST=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
@@ -506,6 +521,17 @@ else
     bashio::log.warning "MCP Server endpoint not available (HTTP $MCP_HTTP_CODE)"
     bashio::log.warning "Install the MCP Server integration in Home Assistant to enable MCP features"
     USE_MCP_PROXY=false
+fi
+
+# Set the actual HA URL and token to use
+if [ "$USE_CUSTOM_HA" = "true" ]; then
+    MCP_HA_URL="$HA_URL"
+    MCP_HA_TOKEN="$HA_TOKEN"
+    bashio::log.info "Using custom HA configuration for hass-mcp: $MCP_HA_URL"
+else
+    MCP_HA_URL="http://supervisor/core"
+    MCP_HA_TOKEN="$SUPERVISOR_TOKEN"
+    bashio::log.info "Using supervisor proxy for hass-mcp: $MCP_HA_URL"
 fi
 
 # Create MCP configuration in Claude Code format
@@ -534,8 +560,8 @@ if [ "$USE_MCP_PROXY" = "true" ]; then
       "args": ["-m", "app"],
       "cwd": "/opt/hass-mcp",
       "env": {
-        "HA_URL": "http://supervisor/core",
-        "HA_TOKEN": "${SUPERVISOR_TOKEN}"
+        "HA_URL": "${MCP_HA_URL}",
+        "HA_TOKEN": "${MCP_HA_TOKEN}"
       }
     },
     "context7": {
@@ -556,8 +582,8 @@ else
       "args": ["-m", "app"],
       "cwd": "/opt/hass-mcp",
       "env": {
-        "HA_URL": "http://supervisor/core",
-        "HA_TOKEN": "${SUPERVISOR_TOKEN}"
+        "HA_URL": "${MCP_HA_URL}",
+        "HA_TOKEN": "${MCP_HA_TOKEN}"
       }
     },
     "context7": {
