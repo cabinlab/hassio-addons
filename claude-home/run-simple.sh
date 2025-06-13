@@ -530,7 +530,7 @@ if [ "$USE_MCP_PROXY" = "true" ]; then
       }
     },
     "homeassistant": {
-      "command": "python3",
+      "command": "/opt/hass-mcp/venv/bin/python",
       "args": ["-m", "app"],
       "cwd": "/opt/hass-mcp",
       "env": {
@@ -552,7 +552,7 @@ else
 {
   "mcpServers": {
     "homeassistant": {
-      "command": "python3",
+      "command": "/opt/hass-mcp/venv/bin/python",
       "args": ["-m", "app"],
       "cwd": "/opt/hass-mcp",
       "env": {
@@ -582,10 +582,8 @@ if [ "$WORKING_DIR" != "/root" ] && [ "$WORKING_DIR" != "/config/claude-config" 
 fi
 
 # Test hass-mcp is installed
-if [ -f /opt/hass-mcp/app/__main__.py ]; then
-    bashio::log.info "hass-mcp files found"
-    # TODO: Re-enable when pip issues are resolved
-    bashio::log.warning "hass-mcp temporarily disabled due to build issues"
+if [ -f /opt/hass-mcp/venv/bin/python ] && [ -f /opt/hass-mcp/app/__main__.py ]; then
+    bashio::log.info "hass-mcp installed and ready"
 else
     bashio::log.warning "hass-mcp not installed - using native MCP only"
 fi
