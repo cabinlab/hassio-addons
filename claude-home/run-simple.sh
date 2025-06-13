@@ -511,12 +511,12 @@ fi
 # Create MCP configuration in Claude Code format
 # 1. In the CLAUDE_CONFIG_DIR location (user scope)
 if [ "$USE_MCP_PROXY" = "true" ]; then
-    # Use mcp-remote to handle SSE authentication properly
-    # Note: No spaces around colon in header due to Windows/Cursor bug
+    # Try native HA MCP first, then fall back to hass-mcp
+    bashio::log.info "Configuring both native HA MCP and hass-mcp as fallback"
     cat > /config/claude-config/.mcp.json << EOF
 {
   "mcpServers": {
-    "homeassistant": {
+    "homeassistant-native": {
       "command": "npx",
       "args": [
         "-y",
@@ -528,15 +528,35 @@ if [ "$USE_MCP_PROXY" = "true" ]; then
       "env": {
         "AUTH_HEADER": "Bearer ${SUPERVISOR_TOKEN}"
       }
+    },
+    "homeassistant": {
+      "command": "python3",
+      "args": ["-m", "app"],
+      "cwd": "/opt/hass-mcp",
+      "env": {
+        "HA_URL": "http://supervisor/core",
+        "HA_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
     }
   }
 }
 EOF
 else
-    # No MCP server available
+    # No native MCP server available, use hass-mcp only
+    bashio::log.info "Native HA MCP not available, using hass-mcp"
     cat > /config/claude-config/.mcp.json << EOF
 {
-  "mcpServers": {}
+  "mcpServers": {
+    "homeassistant": {
+      "command": "python3",
+      "args": ["-m", "app"],
+      "cwd": "/opt/hass-mcp",
+      "env": {
+        "HA_URL": "http://supervisor/core",
+        "HA_TOKEN": "${SUPERVISOR_TOKEN}"
+      }
+    }
+  }
 }
 EOF
 fi
@@ -553,36 +573,21 @@ if [ "$WORKING_DIR" != "/root" ] && [ "$WORKING_DIR" != "/config/claude-config" 
     bashio::log.info "MCP config also created in working directory: $WORKING_DIR"
 fi
 
-if [ "$USE_MCP_PROXY" = "true" ]; then
-    bashio::log.info "MCP configuration created using mcp-remote for SSE transport"
-    bashio::log.info "Note: npx will download mcp-remote on first use"
-    bashio::log.info "If authentication still fails, check Home Assistant logs"
-    # Create debug version for troubleshooting
-    cat > /config/claude-config/mcp-debug.json << EOF
-{
-  "comment": "Debug version with --debug flag",
-  "mcpServers": {
-    "homeassistant-debug": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "http://supervisor/core/mcp_server/sse",
-        "--header",
-        "Authorization:\${AUTH_HEADER}",
-        "--debug"
-      ],
-      "env": {
-        "AUTH_HEADER": "Bearer ${SUPERVISOR_TOKEN}"
-      }
-    }
-  }
-}
-EOF
+# Test hass-mcp is installed
+if python3 -c "import app" 2>/dev/null; then
+    bashio::log.info "hass-mcp module verified and ready"
 else
-    bashio::log.info "MCP configuration disabled - install MCP Server integration in HA"
-    bashio::log.info "Alternative: Consider using hass-mcp for standalone MCP functionality"
+    bashio::log.error "hass-mcp module not found - MCP may not work"
 fi
+
+bashio::log.info "MCP configuration created"
+if [ "$USE_MCP_PROXY" = "true" ]; then
+    bashio::log.info "Using both native HA MCP (via mcp-remote) and hass-mcp as fallback"
+    bashio::log.info "Try 'homeassistant-native' first, then 'homeassistant' if it fails"
+else
+    bashio::log.info "Using hass-mcp for Home Assistant integration"
+fi
+bashio::log.info "MCP servers available via /mcp command in Claude Code"
 
 # Do NOT pre-create CLAUDE.md - Claude Code needs to create it itself
 # to properly link it to the memory system

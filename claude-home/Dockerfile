@@ -2,12 +2,14 @@ ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
 # Install required packages and Node.js
-# First install dependencies
+# First install dependencies including Python for hass-mcp
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     wget \
     nano \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20.x from NodeSource
@@ -31,11 +33,18 @@ RUN ARCH="$(dpkg --print-architecture)" && \
 # Install Claude Code globally - it just works on Debian!
 RUN npm install -g @anthropic-ai/claude-code
 
+# Copy and install hass-mcp-lite
+COPY hass-mcp-lite /opt/hass-mcp
+WORKDIR /opt/hass-mcp
+RUN pip3 install --no-cache-dir --break-system-packages -e .
+WORKDIR /
+
 # Copy run scripts and make them executable
 COPY run.sh /
 COPY run-simple.sh /
 COPY claude-wrapper.sh /usr/local/bin/claude-wrapper
-RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper
+COPY test-mcp.sh /usr/local/bin/test-mcp
+RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper /usr/local/bin/test-mcp
 
 # S6 expects the service in a specific location for legacy mode
 # Use the simple script for now
