@@ -1,6 +1,6 @@
 name: "Claude Home"
 description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.2.2"
+version: "2.2.3"
 slug: "claude_home"
 init: false
 
@@ -59,7 +59,8 @@ map:
 # Service startup configuration
 startup: services
 
-# Home Assistant API access for service discovery
+# Home Assistant API access
+homeassistant_api: true
 hassio_api: true
 
 # Protection mode - when disabled, allows access to more files
