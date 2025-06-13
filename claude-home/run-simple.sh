@@ -537,28 +537,28 @@ fi
 # Create MCP configuration in Claude Code format
 # 1. In the CLAUDE_CONFIG_DIR location (user scope)
 if [ "$USE_MCP_PROXY" = "true" ]; then
-    # Try native HA MCP first, then fall back to hass-mcp
-    bashio::log.info "Configuring both native HA MCP and hass-mcp as fallback"
+    # Native HA MCP exists but commenting out for now
+    bashio::log.info "Configuring hass-mcp (native HA MCP commented out for now)"
     cat > /config/claude-config/.mcp.json << EOF
 {
   "mcpServers": {
-    "homeassistant-native": {
-      "command": "npx",
-      "args": [
+    "_homeassistant-native": {
+      "_comment": "Native HA MCP - commented out until working properly",
+      "_command": "npx",
+      "_args": [
         "-y",
         "mcp-remote",
         "http://supervisor/core/mcp_server/sse",
         "--header",
         "Authorization:\${AUTH_HEADER}"
       ],
-      "env": {
+      "_env": {
         "AUTH_HEADER": "Bearer ${SUPERVISOR_TOKEN}"
       }
     },
-    "homeassistant": {
-      "command": "/opt/hass-mcp/venv/bin/python",
-      "args": ["-m", "app"],
-      "cwd": "/opt/hass-mcp",
+    "hass-mcp": {
+      "command": "bash",
+      "args": ["-c", "cd /opt/hass-mcp && exec /opt/hass-mcp/venv/bin/python -m app"],
       "env": {
         "HA_URL": "${MCP_HA_URL}",
         "HA_TOKEN": "${MCP_HA_TOKEN}"
@@ -577,10 +577,9 @@ else
     cat > /config/claude-config/.mcp.json << EOF
 {
   "mcpServers": {
-    "homeassistant": {
-      "command": "/opt/hass-mcp/venv/bin/python",
-      "args": ["-m", "app"],
-      "cwd": "/opt/hass-mcp",
+    "hass-mcp": {
+      "command": "bash",
+      "args": ["-c", "cd /opt/hass-mcp && exec /opt/hass-mcp/venv/bin/python -m app"],
       "env": {
         "HA_URL": "${MCP_HA_URL}",
         "HA_TOKEN": "${MCP_HA_TOKEN}"
@@ -617,13 +616,13 @@ fi
 bashio::log.info "MCP configuration created"
 if [ "$USE_MCP_PROXY" = "true" ]; then
     bashio::log.info "MCP servers configured:"
-    bashio::log.info "  - homeassistant-native: Native HA MCP (may fail)"
-    bashio::log.info "  - homeassistant: hass-mcp fallback"
-    bashio::log.info "  - context7: Test server for documentation (should work)"
+    bashio::log.info "  - hass-mcp: Home Assistant integration"
+    bashio::log.info "  - context7: Documentation server"
+    bashio::log.info "  (Native HA MCP commented out for stability)"
 else
     bashio::log.info "MCP servers configured:"
-    bashio::log.info "  - homeassistant: hass-mcp for HA integration"
-    bashio::log.info "  - context7: Test server for documentation"
+    bashio::log.info "  - hass-mcp: Home Assistant integration"
+    bashio::log.info "  - context7: Documentation server"
 fi
 bashio::log.info "Use /mcp command in Claude Code to connect"
 

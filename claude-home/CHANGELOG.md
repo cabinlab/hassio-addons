@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.2.5 - 2025-06-13
+
+### MCP (Model Context Protocol) Integration Fixed
+- **FIXED**: Home Assistant MCP server connection issues resolved
+- **FIXED**: hass-mcp now properly launches with correct working directory
+- **IMPROVED**: Simplified MCP configuration - removed non-working native HA MCP
+- **NEW**: Full access to Home Assistant entities, automations, and services via MCP
+- Users with ha_url and ha_token configured can now use Claude Code with Home Assistant
+
+## 2.2.0 - 2025-06-13
+
+### Home Assistant Integration
+- **NEW**: Added MCP (Model Context Protocol) support for Home Assistant
+- **NEW**: Configuration options for custom Home Assistant URL and token
+- **NEW**: Integrated hass-mcp for entity and automation access
+- **NEW**: Context7 documentation server included
+- **IMPROVED**: Added homeassistant_api permission for better integration
+
 ## 2.0.0 - 2025-06-12
 
 ### Major Platform Change
