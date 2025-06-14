@@ -33,6 +33,9 @@ dist/
 # Development workspace
 dev-workspace/
 
+# Tools and diagnostic scripts
+*/tools/
+
 # Home Assistant
 .DS_Store
 Thumbs.db
