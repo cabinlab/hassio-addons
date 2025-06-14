@@ -2,7 +2,7 @@
 
 An AI-powered web-based terminal with Claude Code CLI pre-installed for Home Assistant.
 
-![Claude Home Screenshot](https://github.com/heytcass/home-assistant-addons/raw/main/claude-terminal/screenshot.png)
+![Claude Home Screenshot](screenshot.png)
 
 *Claude Home running in Home Assistant*
 
@@ -18,11 +18,11 @@ This add-on provides an AI-powered web-based terminal interface with Claude Code
 ## Features
 
 - **Web Terminal Interface**: Access Claude through a browser-based terminal
-- **Auto-Launch**: Claude starts automatically when you open the terminal
+- **Auto-Launch Option**: Claude can start automatically when you open the terminal
 - **Latest Claude Code CLI**: Pre-installed with Anthropic's official CLI
-- **No Configuration Needed**: Uses OAuth authentication for easy setup
-- **Direct Config Access**: Terminal starts in your `/config` directory for immediate access to all Home Assistant files
-- **Home Assistant Integration**: Access directly from your dashboard
+- **OAuth Authentication**: Simple setup with persistent credentials
+- **Flexible Working Directory**: Choose where Claude starts (/config, /root, etc.)
+- **MCP Integration**: Home Assistant integration via MCP servers
 - **Panel Icon**: Quick access from the sidebar with the code-braces icon
 
 ## Quick Start
@@ -57,70 +57,48 @@ claude --help
 
 ## Configuration
 
-Claude Home provides comprehensive configuration options through the Home Assistant add-on interface. Configuration is automatically converted to Claude's native settings.json format for optimal performance and compatibility:
+Claude Home provides several configuration options through the Home Assistant add-on interface:
 
 ### Available Configuration Options
 
 | Setting | Description | Default | Options |
 |---------|-------------|---------|---------|
-| **Claude Model** | AI model to use for conversations | `claude-3-5-sonnet-20241022` | Sonnet, Haiku, Opus variants |
-| **Theme** | Terminal color scheme | `dark` | dark, light, light-daltonized, dark-daltonized |
-| **Verbose Logging** | Show detailed Claude operation logs | `false` | true/false |
-| **Max Turns** | Limit conversation turns to prevent runaway | `10` | 1-50 |
-| **Disable Telemetry** | Turn off Claude usage analytics | `false` | true/false |
+| **Claude Model** | AI model to use | `haiku` | haiku, sonnet, opus |
+| **Theme** | Terminal color scheme | `dark` | dark, light, system, high-contrast, auto |
+| **Auto Claude** | Start Claude automatically | `false` | true/false |
+| **Verbose Logging** | Show detailed operation logs | `false` | true/false |
+| **Disable Telemetry** | Turn off usage analytics | `false` | true/false |
 | **Terminal Bell** | Audio feedback on completion | `true` | true/false |
 | **HA Notifications** | Send completion notices to HA | `false` | true/false |
-| **Notification Service** | Which HA service to use for notifications | `persistent_notification` | Any HA notify service |
-| **Context Integration** | Enable HA entity access from Claude | `true` | true/false |
-| **Context Domains** | Entity domains Claude can access | `climate,sensor,binary_sensor,light,switch,weather` | Comma-separated list |
-| **Context Max Entities** | Maximum entities to display | `100` | 10-500 |
+| **Notification Service** | Which HA service to use | `persistent_notification` | Various notify services |
+| **Working Directory** | Where Claude starts | `/config` | /config, /config/claude-workspace, /root, /config/custom_components |
+| **HA URL** | Custom Home Assistant URL | `` | Optional for MCP |
+| **HA Token** | Custom Home Assistant token | `` | Optional for MCP |
 
 ### Claude Model Options
 
-- **Claude 3.5 Sonnet** (default) - Most capable, best for complex tasks
-- **Claude 3.5 Haiku** - Fastest, good for simple tasks  
-- **Claude 3 Opus** - Previous generation, very capable
-- **Claude 3 Sonnet** - Balanced performance
-- **Claude 3 Haiku** - Previous generation, fast
+- **haiku** - Claude 3.5 Haiku, fastest and most cost-effective
+- **sonnet** - Claude Sonnet 4, most capable for complex tasks
+- **opus** - Claude 3 Opus, balanced performance
 
-### Theme Options
+### Working Directory Options
 
-- **dark** - Standard dark theme
-- **light** - Standard light theme
-- **light-daltonized** - Light theme optimized for color vision differences
-- **dark-daltonized** - Dark theme optimized for color vision differences
+- **/config** (default) - Start in your Home Assistant config directory
+- **/config/claude-workspace** - Dedicated workspace for Claude projects
+- **/root** - Start in the container root directory
+- **/config/custom_components** - Start in your custom components directory
 
-### Home Assistant Context Integration
+### MCP Integration
 
-- **Context Integration**: When enabled, Claude has access to your Home Assistant entities and can help with automation tasks
-- **Context Domains**: Control which entity types Claude can see (e.g., climate, sensor, light, switch)
-- **Context Max Entities**: Limit the number of entities displayed to prevent information overload
+Claude Home includes MCP (Model Context Protocol) servers for Home Assistant integration:
+- **hass-mcp**: Provides access to Home Assistant entities and services
+- **context7**: Documentation and context server
 
-**Available Context Commands:**
-```bash
-ha entities [domain]     # List HA entities (optionally by domain)
-ha state <entity_id>     # Get specific entity state and attributes  
-ha summary              # Show system overview with entity counts
-ha help                 # Show all available commands
-```
+Use the `/mcp` command in Claude to connect to these servers.
 
-**Example Usage:**
-```bash
-# List all climate entities
-ha entities climate
+### Authentication Notes
 
-# Get detailed state of a sensor
-ha state sensor.living_room_temperature
-
-# See system overview
-ha summary
-```
-
-### Privacy & Performance Settings
-
-- **Disable Telemetry**: Prevents Claude from sending usage analytics to Anthropic
-- **Max Turns**: Safety limit to prevent infinite conversation loops
-- **Verbose Logging**: Shows detailed turn-by-turn output for debugging
+⚠️ **Important**: Claude uses OAuth authentication that cannot persist across container restarts. You'll need to re-authenticate each time the add-on restarts. This is a limitation of Claude Code itself, not the add-on.
 
 ### How to Configure
 
@@ -129,7 +107,7 @@ ha summary
 3. Adjust your preferred settings
 4. Click **Save** and restart the add-on
 
-Configuration changes take effect after restarting the add-on. Settings are automatically converted to Claude's native settings.json format for optimal integration with Claude Code CLI.
+Configuration changes take effect after restarting the add-on.
 
 ## Documentation
 

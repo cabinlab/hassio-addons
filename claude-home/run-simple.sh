@@ -321,11 +321,15 @@ else
         echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Authentication needed !!!!!\${RESET}"
         echo ""
         echo "             Previous session expired (container restarted)"
-        echo "             Run 'claude' to start"
+        echo "             Run 'claude' to re-authenticate with Anthropic"
+        echo ""
+        echo "             💡 This is normal after add-on restart"
+        echo "             💡 Your conversations and settings are preserved"
     else
         echo -e "              \${BRIGHT_ORANGE}¡¡¡¡¡ Welcome to Claude Home !!!!!\${RESET}"
         echo ""
         echo "             Run 'claude' to get started"
+        echo "             You'll be prompted to log in to your Anthropic account"
     fi
 fi
 echo ""
@@ -344,9 +348,10 @@ if [ "\$HA_NOTIFICATIONS" = "true" ]; then
 fi
 echo ""
 
-# Show MCP debugging info
+# Show MCP debugging info and troubleshooting
 echo ""
 echo "MCP commands: 'claude mcp list' to see servers"
+echo "Troubleshooting: 'claude-troubleshoot' for help"
 echo ""
 
 # Check if auto-start is enabled
@@ -446,6 +451,50 @@ EOF
 
 chmod +x /usr/local/bin/restore-auth
 
+# Create troubleshooting helper
+cat > /usr/local/bin/claude-troubleshoot << 'EOF'
+#!/bin/bash
+echo "=== Claude Home Troubleshooting Guide ==="
+echo ""
+
+# Check authentication status
+echo "1. AUTHENTICATION STATUS:"
+if [ -f "/config/claude-config/.claude/.credentials.json" ]; then
+    echo "   ✅ Credentials file exists"
+    if [ -s "/config/claude-config/.claude/.credentials.json" ]; then
+        echo "   ✅ Credentials file is not empty"
+    else
+        echo "   ⚠️  Credentials file is empty"
+    fi
+else
+    echo "   ❌ No credentials file found"
+fi
+
+echo ""
+echo "2. COMMON SOLUTIONS:"
+echo "   • Authentication needed: Run 'claude' to re-authenticate"
+echo "   • Browser won't open: Copy the OAuth URL manually"
+echo "   • Still having issues: Check the add-on logs in Home Assistant"
+echo ""
+
+echo "3. QUICK COMMANDS:"
+echo "   claude                    - Start Claude (will prompt for auth if needed)"
+echo "   claude --help            - Show Claude help"
+echo "   check-auth               - Detailed authentication check"
+echo "   /mcp                     - Connect to MCP servers (run within Claude)"
+echo ""
+
+echo "4. IMPORTANT NOTES:"
+echo "   • Re-authentication after restart is NORMAL"
+echo "   • Your conversations and settings are preserved"
+echo "   • This is a Claude Code limitation, not an add-on bug"
+echo ""
+
+echo "For detailed help, see: https://github.com/cabinlab/hassio-addons/tree/main/claude-home"
+EOF
+
+chmod +x /usr/local/bin/claude-troubleshoot
+
 # Create a credential sync helper
 cat > /usr/local/bin/sync-credentials << 'EOF'
 #!/bin/bash
@@ -519,7 +568,8 @@ if [ "$MCP_HTTP_CODE" = "200" ] || [ "$MCP_HTTP_CODE" = "404" ]; then
     USE_MCP_PROXY=true
 else
     bashio::log.warning "MCP Server endpoint not available (HTTP $MCP_HTTP_CODE)"
-    bashio::log.warning "Install the MCP Server integration in Home Assistant to enable MCP features"
+    bashio::log.warning "Install the MCP Server integration in Home Assistant to enable native MCP features"
+    bashio::log.info "Using hass-mcp-lite as fallback - basic functionality will still work"
     USE_MCP_PROXY=false
 fi
 
