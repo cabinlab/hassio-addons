@@ -4,7 +4,7 @@ import functools
 import inspect
 import logging
 
-from app.config import HA_URL, HA_TOKEN, get_ha_headers
+from .config import HA_URL, HA_TOKEN, get_ha_headers
 
 # Set up logging
 logger = logging.getLogger(__name__)

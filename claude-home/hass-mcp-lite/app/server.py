@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from app.hass import (
+from .hass import (
     get_hass_version, get_entity_state, call_service, get_entities,
     get_automations, restart_home_assistant, 
     cleanup_client, filter_fields, summarize_domain, get_system_overview,

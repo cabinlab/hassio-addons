@@ -1,0 +1,1 @@
+# hass-mcp app module

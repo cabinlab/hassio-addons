@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Entry point for running Hass-MCP as a module"""
 
-from app.server import mcp
+from .server import mcp
 
 
 def main():
