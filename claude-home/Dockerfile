@@ -68,12 +68,10 @@ COPY ui /opt/ui
 COPY supervisord.conf /etc/supervisor/conf.d/
 
 # Copy run scripts and make them executable
-COPY run.sh /
 COPY run-simple.sh /
-COPY claude-wrapper.sh /usr/local/bin/claude-wrapper
-COPY test-mcp.sh /usr/local/bin/test-mcp
-COPY mcp-diagnostics.sh /usr/local/bin/mcp-diagnostics
-RUN chmod a+x /run.sh /run-simple.sh /usr/local/bin/claude-wrapper /usr/local/bin/test-mcp /usr/local/bin/mcp-diagnostics
+COPY tools/test-mcp.sh /usr/local/bin/test-mcp
+COPY tools/mcp-diagnostics.sh /usr/local/bin/mcp-diagnostics
+RUN chmod a+x /run-simple.sh /usr/local/bin/test-mcp /usr/local/bin/mcp-diagnostics
 
 # S6 expects the service in a specific location for legacy mode
 # Use the simple script for now
