@@ -41,8 +41,9 @@ RUN python3 -m venv venv && \
     ./venv/bin/pip install --no-cache-dir httpx mcp
 WORKDIR /
 
-# Install chat gateway dependencies
-RUN pip3 install --no-cache-dir httpx mcp anthropic
+# Install chat gateway dependencies in a virtual environment
+RUN python3 -m venv /opt/gateway-venv && \
+    /opt/gateway-venv/bin/pip install --no-cache-dir httpx mcp anthropic
 
 # Install supervisor for managing multiple services
 RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
