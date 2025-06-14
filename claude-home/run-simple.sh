@@ -431,17 +431,8 @@ if [ ! -f "/root/.claude/.credentials.json" ]; then
 fi
 
 # OAuth tokens cannot be used as API keys
-echo "Unfortunately, Claude Code OAuth tokens cannot be restored this way."
-echo ""
-echo "Claude Code uses OAuth authentication which includes:"
-echo "- Access tokens (for API calls)"
-echo "- Refresh tokens (to get new access tokens)"
-echo "- Session state (internal to Claude Code)"
-echo ""
-echo "After container restart, the session state is lost and cannot be restored"
-echo "by simply having the token files. This is a known limitation."
-echo ""
-echo "Please run 'claude auth' to re-authenticate."
+echo "Checking authentication status..."
+echo "Please run 'claude auth' if authentication is needed."
 EOF
 
 chmod +x /usr/local/bin/restore-auth

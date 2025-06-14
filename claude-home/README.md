@@ -63,7 +63,7 @@ Claude Home provides comprehensive configuration options through the Home Assist
 
 | Setting | Description | Default | Options |
 |---------|-------------|---------|---------|
-| **Claude Model** | AI model to use for conversations | `claude-3-5-sonnet-20241022` | Sonnet, Haiku, Opus variants |
+| **Claude Model** | AI model to use for conversations | `haiku` | haiku, sonnet, opus |
 | **Theme** | Terminal color scheme | `dark` | dark, light, light-daltonized, dark-daltonized |
 | **Verbose Logging** | Show detailed Claude operation logs | `false` | true/false |
 | **Max Turns** | Limit conversation turns to prevent runaway | `10` | 1-50 |
@@ -77,11 +77,9 @@ Claude Home provides comprehensive configuration options through the Home Assist
 
 ### Claude Model Options
 
-- **Claude 3.5 Sonnet** (default) - Most capable, best for complex tasks
-- **Claude 3.5 Haiku** - Fastest, good for simple tasks  
-- **Claude 3 Opus** - Previous generation, very capable
-- **Claude 3 Sonnet** - Balanced performance
-- **Claude 3 Haiku** - Previous generation, fast
+- **haiku** (default) - Fastest and most cost-effective, good for most tasks
+- **sonnet** - Balanced performance and capability
+- **opus** - Most capable model, best for complex tasks
 
 ### Theme Options
 
@@ -144,4 +142,5 @@ For detailed usage instructions, see the [documentation](DOCS.md).
 
 ## Credits
 
-Originally forked from: https://github.com/heytcass/home-assistant-addons
+Originally forked from: https://github.com/heytcass/home-assistant-addons  
+Chat interface powered by: https://github.com/anse-app/anse

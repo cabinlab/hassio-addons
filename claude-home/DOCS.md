@@ -18,7 +18,6 @@ This add-on provides a web-based terminal with Claude Code CLI pre-installed, al
 
 No configuration is needed! The add-on uses OAuth authentication, so you'll be prompted to log in to your Anthropic account the first time you use it.
 
-⚠️ **Important**: Due to Claude Code's OAuth implementation, you'll need to re-authenticate each time the add-on restarts. This is a limitation of Claude Code itself, not the add-on. Your credentials are stored in `/config/claude-config` but the OAuth session cannot be restored after container restart.
 
 For detailed information about authentication, see the [Authentication Guide](AUTHENTICATION.md).
 
