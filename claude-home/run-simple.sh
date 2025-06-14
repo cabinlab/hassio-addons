@@ -618,11 +618,31 @@ bashio::log.info "Use /mcp command in Claude Code to connect"
 # to properly link it to the memory system
 bashio::log.info "CLAUDE.md will be created in working directory: $WORKING_DIR"
 
-# Start web terminal
-bashio::log.info "Starting web terminal on port 7681..."
+# Configure environment for supervisor
+export GATEWAY_PORT=$(bashio::config 'gateway_port' '8001')
+export CLAUDE_CODE_AVAILABLE="true"
+export OPENAI_API_KEY=$(bashio::config 'openai_api_key' '')
+export OPENAI_MODEL=$(bashio::config 'openai_model' 'gpt-3.5-turbo')
+export CHAT_INTERFACE=$(bashio::config 'chat_interface' 'true')
+export ENABLE_OPENAI_FALLBACK=$(bashio::config 'enable_openai_fallback' 'false')
 
-exec ttyd \
-    --port 7681 \
-    --interface 0.0.0.0 \
-    --writable \
-    /tmp/startup.sh
+# Configure gateway based on settings
+if bashio::config.true 'enable_openai_fallback' && bashio::config.has_value 'openai_api_key'; then
+    bashio::log.info "OpenAI fallback enabled"
+else
+    bashio::log.info "Using Claude Code only (no fallback)"
+fi
+
+# Create directories for logs
+mkdir -p /var/log
+
+# Check if chat interface should be enabled
+if bashio::config.true 'chat_interface'; then
+    bashio::log.info "Chat interface enabled on port 3000"
+else
+    bashio::log.info "Chat interface disabled, terminal only"
+fi
+
+# Start all services via supervisor
+bashio::log.info "Starting services via supervisor..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

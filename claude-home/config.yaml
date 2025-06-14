@@ -1,6 +1,6 @@
 name: "Claude Home"
-description: "AI-powered terminal interface with Claude Code CLI"
-version: "2.2.7"
+description: "AI-powered terminal and chat interface with Claude Code CLI"
+version: "2.3.0"
 slug: "claude_home"
 init: false
 
@@ -14,16 +14,22 @@ url: "https://github.com/cabinlab/hassio-addons/tree/main/claude-home"
 
 # Web interface configuration
 ingress: true
-ingress_port: 7681
-panel_icon: mdi:code-braces
+ingress_port: 8080
+panel_icon: mdi:robot-happy
 panel_title: "Claude Home"
 panel_admin: true
 
 # Port configuration
 ports:
-  7681/tcp: 7681
+  8080/tcp: 8080
+  7681/tcp: null
+  3000/tcp: null
+  8001/tcp: null
 ports_description:
-  7681/tcp: "Web terminal (not required for ingress)"
+  8080/tcp: "Main interface (responsive UI)"
+  7681/tcp: "Web terminal (internal)"
+  3000/tcp: "Chat interface (internal)"
+  8001/tcp: "API Gateway (internal)"
 
 # Add-on configuration options
 options:
@@ -38,6 +44,11 @@ options:
   working_directory: "/config"
   ha_url: ""
   ha_token: ""
+  chat_interface: true
+  openai_api_key: ""
+  openai_model: "gpt-3.5-turbo"
+  enable_openai_fallback: false
+  gateway_port: 8001
 
 schema:
   claude_model: "list(haiku|sonnet|opus)"
@@ -51,6 +62,11 @@ schema:
   working_directory: "list(/config|/config/claude-workspace|/root|/config/custom_components)?"
   ha_url: "str?"
   ha_token: "password?"
+  chat_interface: "bool?"
+  openai_api_key: "password?"
+  openai_model: "str?"
+  enable_openai_fallback: "bool?"
+  gateway_port: "int(8000,8999)?"
 
 # Volume mapping for persistent storage
 map:
@@ -74,4 +90,4 @@ full_access: true
 apparmor: true
 
 # Web UI access URL
-webui: http://[HOST]:[PORT:7681]/
+webui: http://[HOST]:[PORT:8080]/

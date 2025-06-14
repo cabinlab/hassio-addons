@@ -18,23 +18,25 @@ This add-on provides a web-based terminal with Claude Code CLI pre-installed, al
 
 No configuration is needed! The add-on uses OAuth authentication, so you'll be prompted to log in to your Anthropic account the first time you use it.
 
-Your OAuth credentials are stored in the `/config/claude-config` directory and will persist across add-on updates and restarts, so you won't need to log in again.
+⚠️ **Important**: Due to Claude Code's OAuth implementation, you'll need to re-authenticate each time the add-on restarts. This is a limitation of Claude Code itself, not the add-on. Your credentials are stored in `/config/claude-config` but the OAuth session cannot be restored after container restart.
+
+For detailed information about authentication, see the [Authentication Guide](AUTHENTICATION.md).
 
 ## Usage
 
-Claude launches automatically when you open the terminal. You can also start Claude manually with:
+Claude can be configured to launch automatically when you open the terminal (set "Auto Claude" to true in configuration). You can also start Claude manually with:
 
 ```bash
-node /usr/local/bin/claude
+claude
 ```
 
 ### Common Commands
 
-- `claude -i` - Start an interactive Claude session
+- `claude` - Start Claude (will prompt for auth if needed)
 - `claude --help` - See all available commands
 - `claude "your prompt"` - Ask Claude a single question
-- `claude process myfile.py` - Have Claude analyze a file
-- `claude --editor` - Start an interactive editor session
+- `claude code myfile.py` - Have Claude analyze a file
+- `/mcp` - Connect to MCP servers for Home Assistant integration
 
 The terminal starts directly in your `/config` directory, giving you immediate access to all your Home Assistant configuration files. This makes it easy to get help with your configuration, create automations, and troubleshoot issues.
 
@@ -49,10 +51,34 @@ The terminal starts directly in your `/config` directory, giving you immediate a
 
 ## Troubleshooting
 
-- If Claude doesn't start automatically, try running `node /usr/local/bin/claude -i` manually
-- If you see permission errors, try restarting the add-on
-- If you have authentication issues, try logging out and back in
-- Check the add-on logs for any error messages
+### Authentication Issues
+
+**"Claude needs authentication" or login prompts:**
+- This is normal after add-on restart due to OAuth session expiry
+- Run `claude` and follow the OAuth flow to re-authenticate
+- Your previous conversations and settings are preserved
+
+**Claude won't start:**
+- Check add-on logs for error messages
+- Try restarting the add-on
+- Ensure your Anthropic account has API access
+
+**Permission errors:**
+- Try restarting the add-on
+- Check that Protection Mode is disabled if you need broader file access
+
+**MCP connection issues:**
+- Use `/mcp` command in Claude to connect to servers
+- Check add-on logs for MCP server status
+- Verify Home Assistant API access is enabled
+
+### Common Error Messages
+
+- **"Session expired"**: Re-run `claude` to re-authenticate
+- **"API key not found"**: Claude uses OAuth, not API keys - run `claude` to log in
+- **"Command not found"**: Make sure you're in the web terminal, not SSH
+
+If problems persist, check the add-on logs in Home Assistant for detailed error information.
 
 ## Credits
 

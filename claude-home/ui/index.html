@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Home</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* Chat panel - always visible */
+        .chat-panel {
+            flex: 1;
+            min-width: 320px;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* Terminal panel - hidden on mobile */
+        .terminal-panel {
+            flex: 1;
+            height: 100%;
+            background: #000;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Iframe styling */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Toggle button for mobile */
+        .toggle-terminal {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-terminal:hover {
+            background: #0073e6;
+            transform: scale(1.1);
+        }
+        
+        /* Resizer for desktop */
+        .resizer {
+            width: 8px;
+            background: #333;
+            cursor: col-resize;
+            position: relative;
+            transition: background 0.3s;
+        }
+        
+        .resizer:hover {
+            background: #0084ff;
+        }
+        
+        .resizer::after {
+            content: '⋮';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 16px;
+        }
+        
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .terminal-panel {
+                display: none;
+            }
+            
+            .resizer {
+                display: none;
+            }
+            
+            .toggle-terminal {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            /* Full screen terminal overlay */
+            .terminal-panel.mobile-visible {
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 999;
+            }
+            
+            .close-terminal {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 1001;
+                background: #ff3b30;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                cursor: pointer;
+            }
+        }
+        
+        /* Tablet optimization */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .chat-panel {
+                flex: 2;
+            }
+            .terminal-panel {
+                flex: 1;
+            }
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Chat Panel -->
+        <div class="chat-panel">
+            <iframe id="chat-frame" src="http://localhost:3000" title="Chat Interface">
+                <div class="loading">Loading chat...</div>
+            </iframe>
+            <button class="toggle-terminal" onclick="toggleTerminal()" title="Open Terminal">
+                <span id="terminal-icon">⌨️</span>
+            </button>
+        </div>
+        
+        <!-- Resizer -->
+        <div class="resizer" id="resizer"></div>
+        
+        <!-- Terminal Panel -->
+        <div class="terminal-panel" id="terminal-panel">
+            <button class="close-terminal" onclick="toggleTerminal()" style="display:none;">✕</button>
+            <iframe id="terminal-frame" src="http://localhost:7681" title="Terminal Interface">
+                <div class="loading">Loading terminal...</div>
+            </iframe>
+        </div>
+    </div>
+    
+    <script>
+        // Responsive panel resizing
+        let isResizing = false;
+        const container = document.querySelector('.container');
+        const chatPanel = document.querySelector('.chat-panel');
+        const terminalPanel = document.querySelector('.terminal-panel');
+        const resizer = document.getElementById('resizer');
+        
+        // Only enable resizing on desktop
+        if (window.innerWidth > 768) {
+            resizer.addEventListener('mousedown', initResize);
+        }
+        
+        function initResize(e) {
+            isResizing = true;
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+        }
+        
+        function resize(e) {
+            if (!isResizing) return;
+            
+            const containerWidth = container.offsetWidth;
+            const newChatWidth = e.clientX;
+            const chatPercent = (newChatWidth / containerWidth) * 100;
+            
+            // Limit resize bounds
+            if (chatPercent > 20 && chatPercent < 80) {
+                chatPanel.style.flex = `0 0 ${chatPercent}%`;
+                terminalPanel.style.flex = `0 0 ${100 - chatPercent}%`;
+            }
+        }
+        
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+        
+        // Mobile terminal toggle
+        function toggleTerminal() {
+            const terminal = document.getElementById('terminal-panel');
+            const closeBtn = terminal.querySelector('.close-terminal');
+            const isVisible = terminal.classList.contains('mobile-visible');
+            
+            if (isVisible) {
+                terminal.classList.remove('mobile-visible');
+                closeBtn.style.display = 'none';
+            } else {
+                terminal.classList.add('mobile-visible');
+                closeBtn.style.display = 'block';
+            }
+        }
+        
+        // Handle iframe loading
+        document.getElementById('chat-frame').onload = function() {
+            console.log('Chat interface loaded');
+        };
+        
+        document.getElementById('terminal-frame').onload = function() {
+            console.log('Terminal interface loaded');
+        };
+        
+        // Save layout preferences
+        function saveLayout() {
+            const layout = {
+                chatWidth: chatPanel.style.flex,
+                terminalWidth: terminalPanel.style.flex
+            };
+            localStorage.setItem('claude-home-layout', JSON.stringify(layout));
+        }
+        
+        // Restore layout preferences
+        function restoreLayout() {
+            const saved = localStorage.getItem('claude-home-layout');
+            if (saved && window.innerWidth > 768) {
+                const layout = JSON.parse(saved);
+                if (layout.chatWidth) chatPanel.style.flex = layout.chatWidth;
+                if (layout.terminalWidth) terminalPanel.style.flex = layout.terminalWidth;
+            }
+        }
+        
+        // Initialize
+        restoreLayout();
+        window.addEventListener('beforeunload', saveLayout);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                // Reset flex on mobile
+                chatPanel.style.flex = '1';
+                terminalPanel.style.flex = '1';
+            } else {
+                restoreLayout();
+            }
+        });
+    </script>
+</body>
+</html>

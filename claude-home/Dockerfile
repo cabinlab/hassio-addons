@@ -32,7 +32,7 @@ RUN ARCH="$(dpkg --print-architecture)" && \
     chmod +x /usr/local/bin/ttyd
 
 # Install Claude Code globally - it just works on Debian!
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm install -g @anthropic-ai/claude-code http-server
 
 # Copy and install hass-mcp in a virtual environment
 COPY hass-mcp-lite /opt/hass-mcp
@@ -40,7 +40,32 @@ WORKDIR /opt/hass-mcp
 RUN python3 -m venv venv && \
     ./venv/bin/pip install --no-cache-dir httpx mcp
 WORKDIR /
+
+# Install chat gateway dependencies
+RUN pip3 install --no-cache-dir httpx mcp anthropic
+
+# Install supervisor for managing multiple services
+RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
+
+# Install Anse chat UI
+RUN git clone https://github.com/anse-app/anse /tmp/anse && \
+    cd /tmp/anse && \
+    npm install && \
+    npm run build && \
+    mkdir -p /opt/anse && \
+    cp -r /tmp/anse/dist/* /opt/anse/ && \
+    rm -rf /tmp/anse
+
 WORKDIR /
+
+# Copy chat gateway
+COPY chat_gateway_mcp.py /opt/
+
+# Copy responsive UI
+COPY ui /opt/ui
+
+# Copy supervisord configuration
+COPY supervisord.conf /etc/supervisor/conf.d/
 
 # Copy run scripts and make them executable
 COPY run.sh /
