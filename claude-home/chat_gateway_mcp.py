@@ -481,8 +481,9 @@ if __name__ == "__main__":
         app.router.add_post('/v1/chat/completions', sse_handler)
         app.router.add_get('/health', health_handler)
         
-        logger.info("Starting HTTP server on port 8000...")
-        web.run_app(app, port=8000)
+        port = int(sys.argv[3]) if len(sys.argv) > 3 else 8000
+        logger.info(f"Starting HTTP server on port {port}...")
+        web.run_app(app, port=port)
     else:
         # Run as MCP server
         mcp.run()

@@ -43,7 +43,7 @@ WORKDIR /
 
 # Install chat gateway dependencies in a virtual environment
 RUN python3 -m venv /opt/gateway-venv && \
-    /opt/gateway-venv/bin/pip install --no-cache-dir httpx mcp anthropic
+    /opt/gateway-venv/bin/pip install --no-cache-dir httpx mcp anthropic pydantic aiohttp
 
 # Install supervisor for managing multiple services
 RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
