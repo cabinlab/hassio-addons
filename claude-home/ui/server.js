@@ -1,21 +1,42 @@
 const http = require('http');
-const httpProxy = require('http-proxy');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = 8080;
 
-// Create proxy instances
-const chatProxy = httpProxy.createProxyServer({target: 'http://localhost:3000'});
-const terminalProxy = httpProxy.createProxyServer({target: 'http://localhost:7681', ws: true});
-const gatewayProxy = httpProxy.createProxyServer({target: 'http://localhost:8001'});
+// Simple proxy function
+function proxy(req, res, targetHost, targetPort, targetPath) {
+    const options = {
+        hostname: targetHost,
+        port: targetPort,
+        path: targetPath || req.url,
+        method: req.method,
+        headers: req.headers
+    };
+
+    const proxyReq = http.request(options, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+        console.error(`Proxy error to ${targetHost}:${targetPort}:`, err.message);
+        res.writeHead(502);
+        res.end('Service unavailable');
+    });
+
+    req.pipe(proxyReq);
+}
 
 const server = http.createServer((req, res) => {
+    console.log(`Request: ${req.method} ${req.url}`);
+    
     // Route based on path
     if (req.url === '/' || req.url === '/index.html') {
         // Serve the main UI
         fs.readFile(path.join(__dirname, 'index.html'), (err, data) => {
             if (err) {
+                console.error('Error reading index.html:', err);
                 res.writeHead(500);
                 res.end('Error loading page');
                 return;
@@ -25,49 +46,61 @@ const server = http.createServer((req, res) => {
         });
     } else if (req.url.startsWith('/chat')) {
         // Proxy to Anse chat UI
-        chatProxy.web(req, res, {}, (err) => {
-            console.error('Chat proxy error:', err);
-            res.writeHead(502);
-            res.end('Chat service unavailable');
-        });
+        proxy(req, res, 'localhost', 3000, req.url.substring(5) || '/');
     } else if (req.url.startsWith('/terminal')) {
         // Proxy to ttyd terminal
-        terminalProxy.web(req, res, {}, (err) => {
-            console.error('Terminal proxy error:', err);
-            res.writeHead(502);
-            res.end('Terminal service unavailable');
-        });
+        proxy(req, res, 'localhost', 7681, req.url.substring(9) || '/');
     } else if (req.url.startsWith('/v1/')) {
         // Proxy to gateway API
-        gatewayProxy.web(req, res, {}, (err) => {
-            console.error('Gateway proxy error:', err);
-            res.writeHead(502);
-            res.end('Gateway service unavailable');
-        });
+        proxy(req, res, 'localhost', 8001, req.url);
     } else {
         res.writeHead(404);
         res.end('Not found');
     }
 });
 
-// Handle WebSocket upgrade for terminal
+// Simple WebSocket proxy for terminal
 server.on('upgrade', (req, socket, head) => {
+    console.log(`WebSocket upgrade request: ${req.url}`);
+    
     if (req.url.startsWith('/terminal')) {
-        terminalProxy.ws(req, socket, head, {}, (err) => {
-            console.error('Terminal WebSocket error:', err);
+        // Connect to ttyd WebSocket
+        const net = require('net');
+        const upstream = net.connect(7681, 'localhost');
+        
+        upstream.on('connect', () => {
+            console.log('Connected to ttyd WebSocket');
+            // Send the HTTP upgrade request
+            upstream.write(`GET ${req.url.substring(9) || '/'} HTTP/1.1\r\n`);
+            for (const [key, value] of Object.entries(req.headers)) {
+                upstream.write(`${key}: ${value}\r\n`);
+            }
+            upstream.write('\r\n');
+            upstream.write(head);
+            
+            // Pipe the connections
+            socket.pipe(upstream);
+            upstream.pipe(socket);
+        });
+        
+        upstream.on('error', (err) => {
+            console.error('WebSocket upstream error:', err);
             socket.destroy();
         });
+        
+        socket.on('error', (err) => {
+            console.error('WebSocket socket error:', err);
+            upstream.destroy();
+        });
+    } else {
+        socket.destroy();
     }
 });
 
-// Error handling
-chatProxy.on('error', (err) => console.error('Chat proxy error:', err));
-terminalProxy.on('error', (err) => console.error('Terminal proxy error:', err));
-gatewayProxy.on('error', (err) => console.error('Gateway proxy error:', err));
-
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Responsive UI server running on port ${PORT}`);
-    console.log('Proxying:');
+    console.log('Routes:');
+    console.log('  / -> UI (this server)');
     console.log('  /chat -> localhost:3000 (Anse)');
     console.log('  /terminal -> localhost:7681 (ttyd)');
     console.log('  /v1/* -> localhost:8001 (Gateway)');
