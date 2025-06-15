@@ -44,18 +44,20 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, {'Content-Type': 'text/html'});
             res.end(data);
         });
-    } else if (req.url.startsWith('/chat')) {
-        // Proxy to Anse chat UI
-        proxy(req, res, 'localhost', 3000, req.url.substring(5) || '/');
-    } else if (req.url.startsWith('/terminal')) {
-        // Proxy to ttyd terminal
-        proxy(req, res, 'localhost', 7681, req.url.substring(9) || '/');
-    } else if (req.url.startsWith('/v1/')) {
-        // Proxy to gateway API
-        proxy(req, res, 'localhost', 8001, req.url);
+    } else if (req.url === '/test') {
+        // Serve test page
+        fs.readFile(path.join(__dirname, 'test.html'), (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                res.end('Error loading test page');
+                return;
+            }
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(data);
+        });
     } else {
         res.writeHead(404);
-        res.end('Not found');
+        res.end(`Not found: ${req.url}`);
     }
 });
 
