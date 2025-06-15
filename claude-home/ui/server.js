@@ -45,9 +45,27 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else if (req.url.startsWith('/chat')) {
-        // Proxy to chat UI - strip /chat prefix
-        const targetPath = req.url.substring(5) || '/';
-        proxy(req, res, 'localhost', 3000, targetPath);
+        // Serve chat UI directly for now
+        const chatPath = req.url.substring(5) || '/index.html';
+        const filePath = path.join('/opt/anse', chatPath === '/' ? 'index.html' : chatPath);
+        
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                console.error('Error reading chat file:', err);
+                // Fall back to proxy if file not found
+                const targetPath = req.url.substring(5) || '/';
+                proxy(req, res, 'localhost', 3000, targetPath);
+                return;
+            }
+            
+            // Determine content type
+            let contentType = 'text/html';
+            if (filePath.endsWith('.css')) contentType = 'text/css';
+            else if (filePath.endsWith('.js')) contentType = 'application/javascript';
+            
+            res.writeHead(200, {'Content-Type': contentType});
+            res.end(data);
+        });
     } else if (req.url.startsWith('/terminal')) {
         // Proxy to ttyd - strip /terminal prefix
         const targetPath = req.url.substring(9) || '/';
