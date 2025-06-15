@@ -45,27 +45,30 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else if (req.url.startsWith('/chat')) {
-        // Serve chat UI directly for now
-        const chatPath = req.url.substring(5) || '/index.html';
-        const filePath = path.join('/opt/anse', chatPath === '/' ? 'index.html' : chatPath);
+        // Debug: Check if we're actually handling this
+        console.log('Chat request received:', req.url);
         
-        fs.readFile(filePath, (err, data) => {
-            if (err) {
-                console.error('Error reading chat file:', err);
-                // Fall back to proxy if file not found
-                const targetPath = req.url.substring(5) || '/';
-                proxy(req, res, 'localhost', 3000, targetPath);
-                return;
-            }
-            
-            // Determine content type
-            let contentType = 'text/html';
-            if (filePath.endsWith('.css')) contentType = 'text/css';
-            else if (filePath.endsWith('.js')) contentType = 'application/javascript';
-            
-            res.writeHead(200, {'Content-Type': contentType});
-            res.end(data);
-        });
+        // For root chat path, return a simple test message
+        if (req.url === '/chat' || req.url === '/chat/') {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            res.end(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Chat Debug</title></head>
+                <body>
+                    <h1>Chat UI Debug</h1>
+                    <p>This is being served by server.js</p>
+                    <p>Request URL: ${req.url}</p>
+                    <p>Time: ${new Date().toISOString()}</p>
+                </body>
+                </html>
+            `);
+            return;
+        }
+        
+        // For other paths, try to proxy
+        const targetPath = req.url.substring(5) || '/';
+        proxy(req, res, 'localhost', 3000, targetPath);
     } else if (req.url.startsWith('/terminal')) {
         // Proxy to ttyd - strip /terminal prefix
         const targetPath = req.url.substring(9) || '/';
