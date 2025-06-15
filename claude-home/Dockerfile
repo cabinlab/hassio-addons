@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Install required packages and Node.js
+# Install required packages and Node.js for Claude Home v2.3.2
 # First install dependencies including Python for hass-mcp
 RUN apt-get update && apt-get install -y \
     git \

@@ -2,10 +2,17 @@ name: Build and Publish Claude Home
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
     paths:
-      - 'claude-home/**'
+      - 'claude-home/Dockerfile'
+      - 'claude-home/build.yaml'
+      - 'claude-home/requirements.txt'
+      - 'claude-home/package*.json'
+      - 'claude-home/chat_gateway_mcp.py'
+      - 'claude-home/supervisord.conf'
+      - 'claude-home/ui/**'
+      - 'claude-home/hass-mcp-lite/**'
       - '.github/workflows/build-claude-home.yml'
   workflow_dispatch:
     inputs:
