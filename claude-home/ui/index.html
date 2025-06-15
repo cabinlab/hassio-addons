@@ -164,9 +164,7 @@
     <div class="container">
         <!-- Chat Panel -->
         <div class="chat-panel">
-            <iframe id="chat-frame" src="http://localhost:3000" title="Chat Interface">
-                <div class="loading">Loading chat...</div>
-            </iframe>
+            <div id="chat-frame" class="loading">Loading chat...</div>
             <button class="toggle-terminal" onclick="toggleTerminal()" title="Open Terminal">
                 <span id="terminal-icon">⌨️</span>
             </button>
@@ -178,9 +176,7 @@
         <!-- Terminal Panel -->
         <div class="terminal-panel" id="terminal-panel">
             <button class="close-terminal" onclick="toggleTerminal()" style="display:none;">✕</button>
-            <iframe id="terminal-frame" src="http://localhost:7681" title="Terminal Interface">
-                <div class="loading">Loading terminal...</div>
-            </iframe>
+            <div id="terminal-frame" class="loading">Loading terminal...</div>
         </div>
     </div>
     
@@ -279,6 +275,31 @@
             } else {
                 restoreLayout();
             }
+        });
+        
+        // Create iframes after page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            // Create chat iframe
+            const chatDiv = document.getElementById('chat-frame');
+            const chatIframe = document.createElement('iframe');
+            chatIframe.src = './chat/';
+            chatIframe.title = 'Chat Interface';
+            chatIframe.style.width = '100%';
+            chatIframe.style.height = '100%';
+            chatIframe.style.border = 'none';
+            chatDiv.innerHTML = '';
+            chatDiv.appendChild(chatIframe);
+            
+            // Create terminal iframe
+            const terminalDiv = document.getElementById('terminal-frame');
+            const terminalIframe = document.createElement('iframe');
+            terminalIframe.src = './terminal/';
+            terminalIframe.title = 'Terminal Interface';
+            terminalIframe.style.width = '100%';
+            terminalIframe.style.height = '100%';
+            terminalIframe.style.border = 'none';
+            terminalDiv.innerHTML = '';
+            terminalDiv.appendChild(terminalIframe);
         });
     </script>
 </body>

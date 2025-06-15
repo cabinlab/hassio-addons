@@ -44,17 +44,17 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, {'Content-Type': 'text/html'});
             res.end(data);
         });
-    } else if (req.url === '/test') {
-        // Serve test page
-        fs.readFile(path.join(__dirname, 'test.html'), (err, data) => {
-            if (err) {
-                res.writeHead(500);
-                res.end('Error loading test page');
-                return;
-            }
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end(data);
-        });
+    } else if (req.url.startsWith('/chat')) {
+        // Proxy to Anse - strip /chat prefix
+        const targetPath = req.url.substring(5) || '/';
+        proxy(req, res, 'localhost', 3000, targetPath);
+    } else if (req.url.startsWith('/terminal')) {
+        // Proxy to ttyd - strip /terminal prefix
+        const targetPath = req.url.substring(9) || '/';
+        proxy(req, res, 'localhost', 7681, targetPath);
+    } else if (req.url.startsWith('/v1/')) {
+        // Proxy to gateway API
+        proxy(req, res, 'localhost', 8001, req.url);
     } else {
         res.writeHead(404);
         res.end(`Not found: ${req.url}`);
@@ -72,11 +72,15 @@ server.on('upgrade', (req, socket, head) => {
         
         upstream.on('connect', () => {
             console.log('Connected to ttyd WebSocket');
-            // Send the HTTP upgrade request
-            upstream.write(`GET ${req.url.substring(9) || '/'} HTTP/1.1\r\n`);
+            // Send the HTTP upgrade request with stripped path
+            const targetPath = req.url.substring(9) || '/';
+            upstream.write(`GET ${targetPath} HTTP/1.1\r\n`);
             for (const [key, value] of Object.entries(req.headers)) {
-                upstream.write(`${key}: ${value}\r\n`);
+                if (key.toLowerCase() !== 'host') {
+                    upstream.write(`${key}: ${value}\r\n`);
+                }
             }
+            upstream.write('Host: localhost:7681\r\n');
             upstream.write('\r\n');
             upstream.write(head);
             
