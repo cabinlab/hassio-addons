@@ -210,18 +210,8 @@
             }
         });
 
-        // Test connection on load
-        fetch(`${apiBase}/v1/chat/completions/test`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: [{ role: 'user', content: 'test' }] })
-        }).then(r => r.json()).then(data => {
-            console.log('Gateway test:', data);
-            // Remove warning if test succeeds
-        }).catch(err => {
-            console.error('Gateway test failed:', err);
-            addMessage('Warning: Gateway may not be responding correctly', 'error');
-        });
+        // Skip the test request - it causes issues with ingress and isn't necessary
+        console.log('Chat interface ready');
     </script>
 </body>
 </html>
