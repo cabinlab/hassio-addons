@@ -45,28 +45,8 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else if (req.url.startsWith('/chat')) {
-        // Debug: Check if we're actually handling this
+        // Proxy all chat requests to port 3000
         console.log('Chat request received:', req.url);
-        
-        // For root chat path, return a simple test message
-        if (req.url === '/chat' || req.url === '/chat/') {
-            res.writeHead(200, {'Content-Type': 'text/html'});
-            res.end(`
-                <!DOCTYPE html>
-                <html>
-                <head><title>Chat Debug</title></head>
-                <body>
-                    <h1>Chat UI Debug</h1>
-                    <p>This is being served by server.js</p>
-                    <p>Request URL: ${req.url}</p>
-                    <p>Time: ${new Date().toISOString()}</p>
-                </body>
-                </html>
-            `);
-            return;
-        }
-        
-        // For other paths, try to proxy
         const targetPath = req.url.substring(5) || '/';
         proxy(req, res, 'localhost', 3000, targetPath);
     } else if (req.url.startsWith('/terminal')) {
