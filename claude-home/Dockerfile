@@ -32,7 +32,7 @@ RUN ARCH="$(dpkg --print-architecture)" && \
     chmod +x /usr/local/bin/ttyd
 
 # Install Claude Code globally - it just works on Debian!
-RUN npm install -g @anthropic-ai/claude-code http-server
+RUN npm install -g @anthropic-ai/claude-code http-server http-proxy
 
 # Copy and install hass-mcp in a virtual environment
 COPY hass-mcp-lite /opt/hass-mcp
