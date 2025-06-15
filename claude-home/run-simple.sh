@@ -148,6 +148,7 @@ case "$MODEL_CHOICE" in
         ;;
 esac
 export ANTHROPIC_MODEL="$CLAUDE_MODEL"
+export CLAUDE_MODEL="$CLAUDE_MODEL"
 
 # Create settings.json in Claude config directory
 # Since CLAUDE_CONFIG_DIR is set to /config/claude-config,
