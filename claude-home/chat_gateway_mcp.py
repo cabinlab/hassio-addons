@@ -477,11 +477,23 @@ if __name__ == "__main__":
             """Health check endpoint"""
             return web.json_response({"status": "ok"})
         
+        async def options_handler(request):
+            """Handle CORS preflight requests"""
+            return web.Response(
+                headers={
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                }
+            )
+        
         app = web.Application()
         app.router.add_post('/v1/chat/completions', sse_handler)
         app.router.add_get('/health', health_handler)
+        app.router.add_options('/v1/chat/completions', options_handler)
+        app.router.add_post('/v1/chat/completions/test', health_handler)
         
-        port = int(sys.argv[3]) if len(sys.argv) > 3 else 8000
+        port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
         logger.info(f"Starting HTTP server on port {port}...")
         web.run_app(app, port=port)
     else:
