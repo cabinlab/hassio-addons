@@ -64,7 +64,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/
 
 # Copy run scripts and make them executable
 COPY run-simple.sh /
-RUN chmod a+x /run-simple.sh
+COPY test-gateway.sh /
+COPY quick-gateway-fix.sh /
+RUN chmod a+x /run-simple.sh /test-gateway.sh /quick-gateway-fix.sh
 
 # S6 expects the service in a specific location for legacy mode
 # Use the simple script for now
