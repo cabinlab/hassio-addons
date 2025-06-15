@@ -71,7 +71,13 @@ const server = http.createServer((req, res) => {
     } else if (req.url.startsWith('/v1/')) {
         // Proxy to gateway API - THIS IS THE IMPORTANT ONE
         proxy(req, res, 'localhost', 8001, req.url);
+    } else if (req.url.includes('/v1/')) {
+        // Handle ingress paths like /api/hassio_ingress/.../chat/v1/...
+        const v1Index = req.url.indexOf('/v1/');
+        const apiPath = req.url.substring(v1Index);
+        proxy(req, res, 'localhost', 8001, apiPath);
     } else {
+        console.log(`404 Not Found: ${req.url}`);
         res.writeHead(404);
         res.end(`Not found: ${req.url}`);
     }
