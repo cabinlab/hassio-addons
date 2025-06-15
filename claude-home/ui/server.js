@@ -45,23 +45,9 @@ const server = http.createServer((req, res) => {
             res.end(data);
         });
     } else if (req.url.startsWith('/chat')) {
-        // Temporarily serve placeholder while Anse is being fixed
-        if (req.url === '/chat' || req.url === '/chat/') {
-            fs.readFile(path.join(__dirname, 'chat-placeholder.html'), (err, data) => {
-                if (err) {
-                    // Fall back to proxy if placeholder not found
-                    const targetPath = req.url.substring(5) || '/';
-                    proxy(req, res, 'localhost', 3000, targetPath);
-                    return;
-                }
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.end(data);
-            });
-        } else {
-            // Proxy other chat paths
-            const targetPath = req.url.substring(5) || '/';
-            proxy(req, res, 'localhost', 3000, targetPath);
-        }
+        // Proxy to chat UI - strip /chat prefix
+        const targetPath = req.url.substring(5) || '/';
+        proxy(req, res, 'localhost', 3000, targetPath);
     } else if (req.url.startsWith('/terminal')) {
         // Proxy to ttyd - strip /terminal prefix
         const targetPath = req.url.substring(9) || '/';
