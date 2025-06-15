@@ -48,8 +48,14 @@ RUN python3 -m venv /opt/gateway-venv && \
 # Install supervisor for managing multiple services
 RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 
-# Copy temporary chat UI (Anse to be integrated in future version)
-COPY chat-ui /opt/anse
+# Install Anse chat UI
+RUN git clone https://github.com/anse-app/anse /tmp/anse && \
+    cd /tmp/anse && \
+    npm install && \
+    npm run build && \
+    mkdir -p /opt/anse && \
+    cp -r /tmp/anse/dist/* /opt/anse/ && \
+    rm -rf /tmp/anse
 
 WORKDIR /
 
