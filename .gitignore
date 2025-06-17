@@ -31,7 +31,7 @@ dist/
 *~
 
 # Development workspace
-dev-workspace/
+dev/
 
 # Tools and diagnostic scripts
 */tools/

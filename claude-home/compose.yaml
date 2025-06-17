@@ -1,0 +1,22 @@
+services:
+  claude-home:
+    image: "local/claude-home:{{VERSION}}"
+    container_name: "{{CONTAINER_NAME}}"
+    environment:
+      - STANDALONE_MODE=true
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/data/options.yaml:ro
+      - {{HA_CONFIG_DIR}}:/config:rw
+    ports:
+      - "{{PORT_8080}}:8080"
+      - "{{PORT_7681}}:7681" 
+      - "{{PORT_3000}}:3000"
+      - "{{PORT_8001}}:8001"
+    networks:
+      - homeassistant
+    restart: unless-stopped
+
+networks:
+  homeassistant:
+    external: true
