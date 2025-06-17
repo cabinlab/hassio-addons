@@ -2,11 +2,17 @@ name: Build and Publish Claude Home
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'claude-home/Dockerfile'
+      - 'claude-home/build.yaml'
+      - 'claude-home/requirements.txt'
+      - 'claude-home/package*.json'
+      - 'claude-home/hass-mcp-lite/**'
+      - '.github/workflows/build-claude-home.yml'
     tags:
       - 'v*'
-    paths:
-      - 'claude-home/**'
-      - '.github/workflows/build-claude-home.yml'
   workflow_dispatch:
     inputs:
       version:
@@ -103,4 +109,38 @@ jobs:
             git commit -m "Update Claude Home to ${VERSION}"
             git push origin update-addon-${VERSION}
             gh pr create --title "Update Claude Home to ${VERSION}" --body "Automated update from container build"
+          fi
+
+      - name: Revert version bump on build failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Only revert if this was triggered by a push to main
+          if [[ "${{ github.event_name }}" == "push" ]] && [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "Build failed - checking if we need to revert version bump"
+            
+            # Get the previous version from git history
+            git fetch origin main
+            PREV_VERSION=$(git show origin/main~1:claude-home/config.yaml | grep "^version:" | cut -d'"' -f2)
+            CURRENT_VERSION=$(grep "^version:" claude-home/config.yaml | cut -d'"' -f2)
+            
+            if [ "$PREV_VERSION" != "$CURRENT_VERSION" ]; then
+              echo "Reverting version from $CURRENT_VERSION to $PREV_VERSION"
+              
+              git config --global user.name 'github-actions[bot]'
+              git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+              
+              # Create a new branch and revert
+              git checkout -b revert-version-$CURRENT_VERSION
+              sed -i "s/version: \"$CURRENT_VERSION\"/version: \"$PREV_VERSION\"/" claude-home/config.yaml
+              git add claude-home/config.yaml
+              git commit -m "Revert version to $PREV_VERSION due to build failure"
+              git push origin revert-version-$CURRENT_VERSION
+              
+              # Create PR
+              gh pr create --title "Revert version to $PREV_VERSION due to build failure" \
+                           --body "The build for version $CURRENT_VERSION failed. This PR reverts the version to prevent users from seeing a broken update." \
+                           --base main
+            fi
           fi
