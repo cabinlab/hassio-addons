@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "homeassistant-native": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://supervisor/core/mcp_server/sse",
+        "--header",
+        "Authorization:${AUTH_HEADER}"
+      ],
+      "env": {
+        "AUTH_HEADER": "Bearer e798983417ae321f1f75946a4b02815c3feb3b3ba59ead92a3fcb529af16df179362d54fcbf778305873802357560644d8cafa715f586d50"
+      }
+    },
+    "homeassistant": {
+      "command": "/opt/hass-mcp/venv/bin/python",
+      "args": ["-m", "app"],
+      "cwd": "/opt/hass-mcp",
+      "env": {
+        "HA_URL": "http://10.0.0.40:8123",
+        "HA_TOKEN": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2NDk3MDJkYTQxZTI0NGZkOWQxMGQ4M2ZjNTMwMjZmYyIsImlhdCI6MTc0OTc4MDQyNSwiZXhwIjoyMDY1MTQwNDI1fQ.ymhHOUXe40lONEdclsJyRZ989hSQbVIU2t6LWB_9Nsk"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}

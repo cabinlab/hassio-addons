@@ -1,0 +1,7 @@
+{
+  "transport": "sse",
+  "url": "http://supervisor/core/mcp_server/sse",
+  "env": {
+    "API_ACCESS_TOKEN": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2NDk3MDJkYTQxZTI0NGZkOWQxMGQ4M2ZjNTMwMjZmYyIsImlhdCI6MTc0OTc4MDQyNSwiZXhwIjoyMDY1MTQwNDI1fQ.ymhHOUXe40lONEdclsJyRZ989hSQbVIU2t6LWB_9Nsk"
+  }
+}
