@@ -1,5 +1,7 @@
 # Cabin Assistant add-ons
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-7289da?logo=discord&logoColor=white)](https://discord.gg/aaSgZBgkCK)
+
 This repository contains custom Home Assistant add-ons that extend your system's functionality.
 
 ## Installation
